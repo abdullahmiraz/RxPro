@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "oh-my-opencode",
+    "@capybearista/opencode-adversarial-review@latest"
+  ],
+  "agents": {
+    "rxpro-builder": {
+      "description": "Builds RxPro prescription management system",
+      "mode": "full",
+      "instructions": "Read .opencode/agents/RxPro-context.md for full project context before making changes"
+    }
+  }
+}
