@@ -1,10 +1,20 @@
 ﻿'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 
+import {
+  useInstructions,
+  useCreateInstruction,
+  useUpdateInstruction,
+  useDeleteInstruction,
+  useRouteTypes,
+  useCreateRouteType,
+  useUpdateRouteType,
+  useDeleteRouteType,
+} from '@/hooks/useSetup'
 import PageHeader from '@/components/shared/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,7 +41,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2, Loader2, FileText, Route } from 'lucide-react'
 
@@ -72,9 +81,16 @@ const defaultRouteTypeValues: RouteTypeFormData = {
 
 export default function InstructionPage() {
   const [activeTab, setActiveTab] = useState('instructions')
-  const [instructions, setInstructions] = useState<Instruction[]>([])
-  const [routeTypes, setRouteTypes] = useState<RouteType[]>([])
-  const [loading, setLoading] = useState(true)
+
+  const { data: instructions, isLoading: instructionsLoading } = useInstructions()
+  const { data: routeTypesData, isLoading: routeTypesLoading } = useRouteTypes()
+  const createInstructionMut = useCreateInstruction()
+  const updateInstructionMut = useUpdateInstruction()
+  const deleteInstructionMut = useDeleteInstruction()
+  const createRouteTypeMut = useCreateRouteType()
+  const updateRouteTypeMut = useUpdateRouteType()
+  const deleteRouteTypeMut = useDeleteRouteType()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingInstruction, setEditingInstruction] = useState<Instruction | null>(null)
   const [editingRouteType, setEditingRouteType] = useState<RouteType | null>(null)
@@ -88,11 +104,6 @@ export default function InstructionPage() {
     resolver: yupResolver(routeTypeSchema),
     defaultValues: defaultRouteTypeValues,
   })
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
 
   const openAddInstructionDialog = useCallback(() => {
     setEditingInstruction(null)
@@ -139,60 +150,54 @@ export default function InstructionPage() {
   }, [instructionForm, routeTypeForm])
 
   const onInstructionSubmit = useCallback(
-    (data: InstructionFormData) => {
-      if (editingInstruction) {
-        setInstructions((prev) =>
-          prev.map((i) =>
-            i.id === editingInstruction.id
-              ? { ...i, ...data }
-              : i
-          )
-        )
-      } else {
-        const newInstruction: Instruction = {
-          id: crypto.randomUUID(),
-          ...data,
+    async (data: InstructionFormData) => {
+      try {
+        if (editingInstruction) {
+          await updateInstructionMut.mutateAsync({ id: editingInstruction.id, data: data as any })
+        } else {
+          await createInstructionMut.mutateAsync(data as any)
         }
-        setInstructions((prev) => [...prev, newInstruction])
+        setDialogOpen(false)
+        setEditingInstruction(null)
+        instructionForm.reset(defaultInstructionValues)
+      } catch {
+        // mutation error
       }
-      setDialogOpen(false)
-      setEditingInstruction(null)
-      instructionForm.reset(defaultInstructionValues)
     },
-    [editingInstruction, instructionForm]
+    [editingInstruction, updateInstructionMut, createInstructionMut, instructionForm]
   )
 
   const onRouteTypeSubmit = useCallback(
-    (data: RouteTypeFormData) => {
-      if (editingRouteType) {
-        setRouteTypes((prev) =>
-          prev.map((r) =>
-            r.id === editingRouteType.id
-              ? { ...r, ...data }
-              : r
-          )
-        )
-      } else {
-        const newRouteType: RouteType = {
-          id: crypto.randomUUID(),
-          ...data,
+    async (data: RouteTypeFormData) => {
+      try {
+        if (editingRouteType) {
+          await updateRouteTypeMut.mutateAsync({ id: editingRouteType.id, data: data as any })
+        } else {
+          await createRouteTypeMut.mutateAsync(data as any)
         }
-        setRouteTypes((prev) => [...prev, newRouteType])
+        setDialogOpen(false)
+        setEditingRouteType(null)
+        routeTypeForm.reset(defaultRouteTypeValues)
+      } catch {
+        // mutation error
       }
-      setDialogOpen(false)
-      setEditingRouteType(null)
-      routeTypeForm.reset(defaultRouteTypeValues)
     },
-    [editingRouteType, routeTypeForm]
+    [editingRouteType, updateRouteTypeMut, createRouteTypeMut, routeTypeForm]
   )
 
-  const handleDeleteInstruction = useCallback((id: string) => {
-    setInstructions((prev) => prev.filter((i) => i.id !== id))
-  }, [])
+  const handleDeleteInstruction = useCallback(
+    (id: string) => {
+      deleteInstructionMut.mutate(id)
+    },
+    [deleteInstructionMut]
+  )
 
-  const handleDeleteRouteType = useCallback((id: string) => {
-    setRouteTypes((prev) => prev.filter((r) => r.id !== id))
-  }, [])
+  const handleDeleteRouteType = useCallback(
+    (id: string) => {
+      deleteRouteTypeMut.mutate(id)
+    },
+    [deleteRouteTypeMut]
+  )
 
   const isEditingInstruction = activeTab === 'instructions' ? !!editingInstruction : false
   const isEditingRouteType = activeTab === 'route-types' ? !!editingRouteType : false
@@ -205,8 +210,11 @@ export default function InstructionPage() {
     ? (editingInstruction ? 'Update the instruction details.' : 'Add a new prescription instruction.')
     : (editingRouteType ? 'Update the route type details.' : 'Add a new route type.')
 
+  const isLoading = activeTab === 'instructions' ? instructionsLoading : routeTypesLoading
+
   const getDialogForm = () => {
     if (activeTab === 'instructions') {
+      const mutationPending = createInstructionMut.isPending || updateInstructionMut.isPending
       return (
         <form onSubmit={instructionForm.handleSubmit(onInstructionSubmit)}>
           <div className="grid gap-4 py-4">
@@ -226,8 +234,8 @@ export default function InstructionPage() {
             </div>
           </div>
           <DialogFooter showCloseButton>
-            <Button type="submit" disabled={instructionForm.formState.isSubmitting} aria-label="Save instruction">
-              {instructionForm.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
+            <Button type="submit" disabled={instructionForm.formState.isSubmitting || mutationPending} aria-label="Save instruction">
+              {(instructionForm.formState.isSubmitting || mutationPending) && <Loader2 className="size-4 animate-spin" />}
               {editingInstruction ? 'Update' : 'Save'}
             </Button>
           </DialogFooter>
@@ -235,6 +243,7 @@ export default function InstructionPage() {
       )
     }
 
+    const mutationPending = createRouteTypeMut.isPending || updateRouteTypeMut.isPending
     return (
       <form onSubmit={routeTypeForm.handleSubmit(onRouteTypeSubmit)}>
         <div className="grid gap-4 py-4">
@@ -254,8 +263,8 @@ export default function InstructionPage() {
           </div>
         </div>
         <DialogFooter showCloseButton>
-          <Button type="submit" disabled={routeTypeForm.formState.isSubmitting} aria-label="Save route type">
-            {routeTypeForm.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
+          <Button type="submit" disabled={routeTypeForm.formState.isSubmitting || mutationPending} aria-label="Save route type">
+            {(routeTypeForm.formState.isSubmitting || mutationPending) && <Loader2 className="size-4 animate-spin" />}
             {editingRouteType ? 'Update' : 'Save'}
           </Button>
         </DialogFooter>
@@ -263,7 +272,7 @@ export default function InstructionPage() {
     )
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading instructions">
         <PageHeader title="Instructions" description="Manage prescription instructions and route types" />
@@ -289,6 +298,9 @@ export default function InstructionPage() {
     )
   }
 
+  const instructionList = (instructions ?? []) as unknown as Instruction[]
+  const routeTypeList = (routeTypesData ?? []) as unknown as RouteType[]
+
   return (
     <div>
       <PageHeader title="Instructions" description="Manage prescription instructions and route types" />
@@ -313,7 +325,7 @@ export default function InstructionPage() {
             </Button>
           </div>
 
-          {instructions.length === 0 ? (
+          {instructionList.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center" role="status">
               <div className="text-muted-foreground">
                 <p className="text-sm font-medium">No instructions found</p>
@@ -335,7 +347,7 @@ export default function InstructionPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {instructions.map((instruction) => (
+                  {instructionList.map((instruction) => (
                     <TableRow key={instruction.id}>
                       <TableCell className="font-medium">{instruction.name}</TableCell>
                       <TableCell className="max-w-md truncate">{instruction.description}</TableCell>
@@ -375,7 +387,7 @@ export default function InstructionPage() {
             </Button>
           </div>
 
-          {routeTypes.length === 0 ? (
+          {routeTypeList.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center" role="status">
               <div className="text-muted-foreground">
                 <p className="text-sm font-medium">No route types found</p>
@@ -397,7 +409,7 @@ export default function InstructionPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {routeTypes.map((routeType) => (
+                  {routeTypeList.map((routeType) => (
                     <TableRow key={routeType.id}>
                       <TableCell className="font-medium">{routeType.name}</TableCell>
                       <TableCell className="max-w-md truncate">{routeType.description}</TableCell>

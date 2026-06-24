@@ -101,3 +101,26 @@ src/
 - `npm run dev` — dev server on :3000
 - `npm run build` — production build (must pass)
 - `tsc --noEmit` — type check (must pass)
+
+## Current Session State (2026-06-24)
+### Done
+- SQLite layer complete (database.ts, dal.ts, API route, api.ts, hooks)
+- Auth works (login → dashboard, middleware validates token)
+- Layout complete (sidebar, page header, loading/error/not-found boundaries)
+- Dashboard with stats + chart + activity table
+- All CRUD page shells exist
+
+### Needs Work
+- prescription/components/ directory needs to be created with 4 files
+- All CRUD pages need to be connected to TanStack Query hooks
+- npm run build needs to be verified
+
+### How to Continue
+1. Read .opencode/memory/tasks.md for current task list
+2. Read .opencode/memory/state.md for project state
+3. Run `npx tsc --noEmit` before committing changes
+4. Run `npm run build` to verify production build
+
+### Running
+- `npm run dev` starts the dev server at localhost:3000
+- Login with admin / password

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 
+import { useSetup, useCreateSetup, useUpdateSetup, useDeleteSetup } from '@/hooks/useSetup'
 import PageHeader from '@/components/shared/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +26,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 
@@ -52,8 +52,11 @@ const defaultValues: FormData = {
 }
 
 export default function SetupPage() {
-  const [setups, setSetups] = useState<Setup[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: setups, isLoading } = useSetup()
+  const createMutation = useCreateSetup()
+  const updateMutation = useUpdateSetup()
+  const deleteMutation = useDeleteSetup()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSetup, setEditingSetup] = useState<Setup | null>(null)
 
@@ -63,14 +66,9 @@ export default function SetupPage() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(schema) as any,
     defaultValues,
   })
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
 
   const openAddDialog = useCallback(() => {
     setEditingSetup(null)
@@ -96,36 +94,36 @@ export default function SetupPage() {
     }
   }, [reset])
 
+  const mutationPending = createMutation.isPending || updateMutation.isPending
+
   const onSubmit = useCallback(
-    (data: FormData) => {
-      if (editingSetup) {
-        setSetups((prev) =>
-          prev.map((s) =>
-            s.id === editingSetup.id
-              ? { ...s, ...data }
-              : s
-          )
-        )
-      } else {
-        const newSetup: Setup = {
-          id: crypto.randomUUID(),
-          ...data,
-          createdAt: new Date().toISOString().split('T')[0],
+    async (data: FormData) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const submitData = data as any
+      try {
+        if (editingSetup) {
+          await updateMutation.mutateAsync({ id: editingSetup.id, data: submitData })
+        } else {
+          await createMutation.mutateAsync(submitData)
         }
-        setSetups((prev) => [...prev, newSetup])
+        setDialogOpen(false)
+        setEditingSetup(null)
+        reset(defaultValues)
+      } catch {
+        // mutation error — dialog stays open
       }
-      setDialogOpen(false)
-      setEditingSetup(null)
-      reset(defaultValues)
     },
-    [editingSetup, reset]
+    [editingSetup, updateMutation, createMutation, reset]
   )
 
-  const handleDelete = useCallback((id: string) => {
-    setSetups((prev) => prev.filter((s) => s.id !== id))
-  }, [])
+  const handleDelete = useCallback(
+    (id: string) => {
+      deleteMutation.mutate(id)
+    },
+    [deleteMutation]
+  )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading setups">
         <PageHeader title="Setup Management" description="Manage system configurations" />
@@ -147,6 +145,8 @@ export default function SetupPage() {
     )
   }
 
+  const setupList = (setups ?? []) as unknown as Setup[]
+
   return (
     <div>
       <PageHeader title="Setup Management" description="Manage system configurations">
@@ -156,7 +156,7 @@ export default function SetupPage() {
         </Button>
       </PageHeader>
 
-      {setups.length === 0 ? (
+      {setupList.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center" role="status">
           <div className="text-muted-foreground">
             <p className="text-sm font-medium">No setups found</p>
@@ -180,7 +180,7 @@ export default function SetupPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {setups.map((setup) => (
+              {setupList.map((setup) => (
                 <TableRow key={setup.id}>
                   <TableCell className="font-medium">{setup.name}</TableCell>
                   <TableCell>{setup.type}</TableCell>
@@ -246,8 +246,8 @@ export default function SetupPage() {
               </div>
             </div>
             <DialogFooter showCloseButton>
-              <Button type="submit" disabled={isSubmitting} aria-label="Save setup">
-                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting || mutationPending} aria-label="Save setup">
+                {(isSubmitting || mutationPending) && <Loader2 className="size-4 animate-spin" />}
                 {editingSetup ? 'Update' : 'Save'}
               </Button>
             </DialogFooter>

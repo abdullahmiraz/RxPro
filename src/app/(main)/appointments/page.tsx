@@ -1,11 +1,18 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
+import { useCookies } from "next-client-cookies"
 import { Plus, Pencil, Trash2, Loader2, Calendar } from "lucide-react"
 
+import {
+  useAppointments,
+  useCreateAppointment,
+  useUpdateAppointment,
+  useDeleteAppointment,
+} from "@/hooks/useAppointments"
 import PageHeader from "@/components/shared/page-header/PageHeader"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -55,12 +62,6 @@ interface Appointment extends AppointmentFormData {
   id: string
 }
 
-let nextId = 1
-
-function createAppointment(data: AppointmentFormData): Appointment {
-  return { ...data, id: String(nextId++) }
-}
-
 const defaultForm: AppointmentFormData = {
   patientName: "",
   date: "",
@@ -77,11 +78,16 @@ const statusColors: Record<string, "default" | "secondary" | "outline"> = {
 }
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const cookies = useCookies()
+  const doctorId = cookies.get("doctor_id")
+  const { data: appointments, isLoading } = useAppointments(doctorId ?? undefined)
+  const createMutation = useCreateAppointment()
+  const updateMutation = useUpdateAppointment()
+  const deleteMutation = useDeleteAppointment()
+
   const [dateFilter, setDateFilter] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAppt, setEditingAppt] = useState<Appointment | null>(null)
-  const [loaded, setLoaded] = useState(false)
 
   const {
     register,
@@ -94,32 +100,15 @@ export default function AppointmentsPage() {
     defaultValues: defaultForm,
   })
 
-  useEffect(() => {
-    const stored = localStorage.getItem("rxpro-appointments")
-    if (stored) {
-      try {
-        const parsed: Appointment[] = JSON.parse(stored)
-        setAppointments(parsed)
-        nextId = parsed.reduce((max, a) => Math.max(max, Number(a.id)), 0) + 1
-      } catch {
-        // ignore
-      }
-    }
-    setLoaded(true)
-  }, [])
+  const appointmentList = (appointments ?? []) as unknown as Appointment[]
 
   const filtered = useMemo(
     () =>
       dateFilter
-        ? appointments.filter((a) => a.date === dateFilter)
-        : appointments,
-    [appointments, dateFilter]
+        ? appointmentList.filter((a) => a.date === dateFilter)
+        : appointmentList,
+    [appointmentList, dateFilter]
   )
-
-  function persist(updated: Appointment[]) {
-    setAppointments(updated)
-    localStorage.setItem("rxpro-appointments", JSON.stringify(updated))
-  }
 
   function openAdd() {
     setEditingAppt(null)
@@ -140,24 +129,25 @@ export default function AppointmentsPage() {
     setDialogOpen(true)
   }
 
-  function onSave(data: AppointmentFormData) {
-    if (editingAppt) {
-      persist(
-        appointments.map((a) =>
-          a.id === editingAppt.id ? { ...a, ...data } : a
-        )
-      )
-    } else {
-      persist([...appointments, createAppointment(data)])
+  async function onSave(data: AppointmentFormData) {
+    try {
+      if (editingAppt) {
+        await updateMutation.mutateAsync({ id: editingAppt.id, data: data as any })
+      } else {
+        await createMutation.mutateAsync(data as any)
+      }
+      setDialogOpen(false)
+      setEditingAppt(null)
+    } catch {
+      // mutation error
     }
-    setDialogOpen(false)
   }
 
   function deleteAppointment(id: string) {
-    persist(appointments.filter((a) => a.id !== id))
+    deleteMutation.mutate(id)
   }
 
-  if (!loaded) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -256,7 +246,7 @@ export default function AppointmentsPage() {
             <DialogTitle>{editingAppt ? "Edit Appointment" : "Add Appointment"}</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit(onSave as any)}>
+          <form onSubmit={handleSubmit(onSave)}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="patientName">Patient Name *</Label>

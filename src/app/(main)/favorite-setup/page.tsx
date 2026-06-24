@@ -1,10 +1,16 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useState, useCallback } from 'react'
+import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 
+import {
+  useFavoriteSetups,
+  useCreateFavoriteSetup,
+  useUpdateFavoriteSetup,
+  useDeleteFavoriteSetup,
+} from '@/hooks/useSetup'
 import PageHeader from '@/components/shared/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +31,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 
@@ -52,8 +57,11 @@ const defaultValues: FormData = {
 }
 
 export default function FavoriteSetupPage() {
-  const [favorites, setFavorites] = useState<FavoriteSetup[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: favorites, isLoading } = useFavoriteSetups()
+  const createMutation = useCreateFavoriteSetup()
+  const updateMutation = useUpdateFavoriteSetup()
+  const deleteMutation = useDeleteFavoriteSetup()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingFavorite, setEditingFavorite] = useState<FavoriteSetup | null>(null)
 
@@ -63,14 +71,9 @@ export default function FavoriteSetupPage() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: yupResolver(schema) as Resolver<FormData>,
+    resolver: yupResolver(schema) as any,
     defaultValues,
   })
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
 
   const openAddDialog = useCallback(() => {
     setEditingFavorite(null)
@@ -96,36 +99,34 @@ export default function FavoriteSetupPage() {
     }
   }, [reset])
 
+  const mutationPending = createMutation.isPending || updateMutation.isPending
+
   const onSubmit = useCallback(
-    (data: FormData) => {
-      if (editingFavorite) {
-        setFavorites((prev) =>
-          prev.map((f) =>
-            f.id === editingFavorite.id
-              ? { ...f, ...data }
-              : f
-          )
-        )
-      } else {
-        const newFavorite: FavoriteSetup = {
-          id: crypto.randomUUID(),
-          ...data,
-          createdAt: new Date().toISOString().split('T')[0],
+    async (data: FormData) => {
+      try {
+        if (editingFavorite) {
+          await updateMutation.mutateAsync({ id: editingFavorite.id, data: data as any })
+        } else {
+          await createMutation.mutateAsync(data as any)
         }
-        setFavorites((prev) => [...prev, newFavorite])
+        setDialogOpen(false)
+        setEditingFavorite(null)
+        reset(defaultValues)
+      } catch {
+        // mutation error — dialog stays open
       }
-      setDialogOpen(false)
-      setEditingFavorite(null)
-      reset(defaultValues)
     },
-    [editingFavorite, reset]
+    [editingFavorite, updateMutation, createMutation, reset]
   )
 
-  const handleDelete = useCallback((id: string) => {
-    setFavorites((prev) => prev.filter((f) => f.id !== id))
-  }, [])
+  const handleDelete = useCallback(
+    (id: string) => {
+      deleteMutation.mutate(id)
+    },
+    [deleteMutation]
+  )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading favorite setups">
         <PageHeader title="Favorite Setups" description="Manage your favorite configurations" />
@@ -146,6 +147,8 @@ export default function FavoriteSetupPage() {
     )
   }
 
+  const favoriteList = (favorites ?? []) as unknown as FavoriteSetup[]
+
   return (
     <div>
       <PageHeader title="Favorite Setups" description="Manage your favorite configurations">
@@ -155,7 +158,7 @@ export default function FavoriteSetupPage() {
         </Button>
       </PageHeader>
 
-      {favorites.length === 0 ? (
+      {favoriteList.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center" role="status">
           <div className="text-muted-foreground">
             <p className="text-sm font-medium">No favorite setups found</p>
@@ -178,7 +181,7 @@ export default function FavoriteSetupPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {favorites.map((favorite) => (
+              {favoriteList.map((favorite) => (
                 <TableRow key={favorite.id}>
                   <TableCell className="font-medium">{favorite.name}</TableCell>
                   <TableCell className="max-w-xs truncate">{favorite.description}</TableCell>
@@ -240,8 +243,8 @@ export default function FavoriteSetupPage() {
               </div>
             </div>
             <DialogFooter showCloseButton>
-              <Button type="submit" disabled={isSubmitting} aria-label="Save favorite setup">
-                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting || mutationPending} aria-label="Save favorite setup">
+                {(isSubmitting || mutationPending) && <Loader2 className="size-4 animate-spin" />}
                 {editingFavorite ? 'Update' : 'Save'}
               </Button>
             </DialogFooter>

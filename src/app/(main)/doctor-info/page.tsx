@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
+import { useCookies } from "next-client-cookies"
 import { Save, Loader2 } from "lucide-react"
 
+import { useDoctorInfo, useUpsertDoctorInfo } from "@/hooks/useDoctorInfo"
 import PageHeader from "@/components/shared/page-header/PageHeader"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -50,38 +52,49 @@ const defaultValues: DoctorFormData = {
 }
 
 export default function DoctorInfoPage() {
-  const [saving, setSaving] = useState(false)
-  const [loaded, setLoaded] = useState(false)
+  const cookies = useCookies()
+  const doctorId = cookies.get("doctor_id")
+  const { data: doctorInfo, isLoading } = useDoctorInfo(doctorId ?? undefined)
+  const upsertMutation = useUpsertDoctorInfo()
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<DoctorFormData>({
     resolver: yupResolver(doctorSchema) as any,
     defaultValues,
   })
 
   useEffect(() => {
-    const stored = localStorage.getItem("rxpro-doctor-info")
-    if (stored) {
-      try {
-        reset(JSON.parse(stored))
-      } catch {
-        // ignore
-      }
+    if (doctorInfo) {
+      reset({
+        name: (doctorInfo.name as string) ?? "",
+        email: (doctorInfo.email as string) ?? "",
+        phone: (doctorInfo.phone as string) ?? "",
+        qualifications: (doctorInfo.qualifications as string) ?? "",
+        licenseNumber: (doctorInfo.licenseNumber as string) ?? "",
+        clinicName: (doctorInfo.clinicName as string) ?? "",
+        address: (doctorInfo.address as string) ?? "",
+        prescriptionHeader: (doctorInfo.prescriptionHeader as string) ?? "",
+        prescriptionFooter: (doctorInfo.prescriptionFooter as string) ?? "",
+      })
     }
-    setLoaded(true)
-  }, [reset])
+  }, [doctorInfo, reset])
 
-  const onSubmit = (data: DoctorFormData) => {
-    setSaving(true)
-    localStorage.setItem("rxpro-doctor-info", JSON.stringify(data))
-    setTimeout(() => setSaving(false), 600)
-  }
+  const onSubmit = useCallback(
+    async (data: DoctorFormData) => {
+      try {
+        await upsertMutation.mutateAsync(data as any)
+      } catch {
+        // mutation error
+      }
+    },
+    [upsertMutation]
+  )
 
-  if (!loaded) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -93,7 +106,7 @@ export default function DoctorInfoPage() {
     <div>
       <PageHeader title="Doctor Information" description="Manage your professional profile" />
 
-      <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Personal Information</CardTitle>
@@ -172,9 +185,9 @@ export default function DoctorInfoPage() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {saving ? "Saving..." : "Save"}
+          <Button type="submit" disabled={isSubmitting || upsertMutation.isPending}>
+            {(isSubmitting || upsertMutation.isPending) ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {(isSubmitting || upsertMutation.isPending) ? "Saving..." : "Save"}
           </Button>
         </div>
       </form>

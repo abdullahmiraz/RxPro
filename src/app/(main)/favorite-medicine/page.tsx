@@ -1,10 +1,16 @@
 ﻿'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 
+import {
+  useFavoriteMedicines,
+  useCreateFavoriteMedicine,
+  useUpdateFavoriteMedicine,
+  useDeleteFavoriteMedicine,
+} from '@/hooks/useSetup'
 import PageHeader from '@/components/shared/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +38,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 
@@ -66,8 +71,11 @@ const defaultValues: FormData = {
 }
 
 export default function FavoriteMedicinePage() {
-  const [medicines, setMedicines] = useState<FavoriteMedicine[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: medicines, isLoading } = useFavoriteMedicines()
+  const createMutation = useCreateFavoriteMedicine()
+  const updateMutation = useUpdateFavoriteMedicine()
+  const deleteMutation = useDeleteFavoriteMedicine()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingMedicine, setEditingMedicine] = useState<FavoriteMedicine | null>(null)
 
@@ -79,16 +87,11 @@ export default function FavoriteMedicinePage() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(schema) as any,
     defaultValues,
   })
 
   const selectedRouteType = watch('routeType')
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
 
   const openAddDialog = useCallback(() => {
     setEditingMedicine(null)
@@ -116,35 +119,34 @@ export default function FavoriteMedicinePage() {
     }
   }, [reset])
 
+  const mutationPending = createMutation.isPending || updateMutation.isPending
+
   const onSubmit = useCallback(
-    (data: FormData) => {
-      if (editingMedicine) {
-        setMedicines((prev) =>
-          prev.map((m) =>
-            m.id === editingMedicine.id
-              ? { ...m, ...data }
-              : m
-          )
-        )
-      } else {
-        const newMedicine: FavoriteMedicine = {
-          id: crypto.randomUUID(),
-          ...data,
+    async (data: FormData) => {
+      try {
+        if (editingMedicine) {
+          await updateMutation.mutateAsync({ id: editingMedicine.id, data: data as any })
+        } else {
+          await createMutation.mutateAsync(data as any)
         }
-        setMedicines((prev) => [...prev, newMedicine])
+        setDialogOpen(false)
+        setEditingMedicine(null)
+        reset(defaultValues)
+      } catch {
+        // mutation error — dialog stays open
       }
-      setDialogOpen(false)
-      setEditingMedicine(null)
-      reset(defaultValues)
     },
-    [editingMedicine, reset]
+    [editingMedicine, updateMutation, createMutation, reset]
   )
 
-  const handleDelete = useCallback((id: string) => {
-    setMedicines((prev) => prev.filter((m) => m.id !== id))
-  }, [])
+  const handleDelete = useCallback(
+    (id: string) => {
+      deleteMutation.mutate(id)
+    },
+    [deleteMutation]
+  )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading favorite medicines">
         <PageHeader title="Favorite Medicines" description="Manage frequently prescribed medicines" />
@@ -166,6 +168,8 @@ export default function FavoriteMedicinePage() {
     )
   }
 
+  const medicineList = (medicines ?? []) as unknown as FavoriteMedicine[]
+
   return (
     <div>
       <PageHeader title="Favorite Medicines" description="Manage frequently prescribed medicines">
@@ -175,7 +179,7 @@ export default function FavoriteMedicinePage() {
         </Button>
       </PageHeader>
 
-      {medicines.length === 0 ? (
+      {medicineList.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center" role="status">
           <div className="text-muted-foreground">
             <p className="text-sm font-medium">No favorite medicines found</p>
@@ -200,7 +204,7 @@ export default function FavoriteMedicinePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {medicines.map((medicine) => (
+              {medicineList.map((medicine) => (
                 <TableRow key={medicine.id}>
                   <TableCell className="font-medium">{medicine.name}</TableCell>
                   <TableCell>{medicine.genericName}</TableCell>
@@ -295,8 +299,8 @@ export default function FavoriteMedicinePage() {
               </div>
             </div>
             <DialogFooter showCloseButton>
-              <Button type="submit" disabled={isSubmitting} aria-label="Save favorite medicine">
-                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting || mutationPending} aria-label="Save favorite medicine">
+                {(isSubmitting || mutationPending) && <Loader2 className="size-4 animate-spin" />}
                 {editingMedicine ? 'Update' : 'Save'}
               </Button>
             </DialogFooter>
