@@ -1,5 +1,5 @@
 # RxPro - Task Tracker
-**Last Updated:** 2026-06-24
+**Last Updated:** 2026-06-25
 
 ## Completed
 - [x] Project scaffold with Next.js 16 + shadcn/ui 4.11 + Tailwind v4
@@ -32,38 +32,23 @@
 - [x] Persistent manager agent + memory system (.opencode/memory/)
 - [x] tsc --noEmit: zero errors
 - [x] npm run build: zero errors (6.5s compile, 15 pages generated)
-- [x] Git repository with 2 meaningful commits
+- [x] Git repository with 7 meaningful commits
+- [x] User journey documentation (docs/user-journey.md - 323 lines, 8 flows, 20 gaps)
+- [x] Context checker agent + meta-cognition + self-review skills
+- [x] **Phase 1**: Dashboard real data, URL params, patient search, edit button, delete confirmations, error toasts
+- [x] **Phase 2**: Appointment auto-update, favorite medicines integration, Create Rx button on patient rows
+- [x] **Phase 3**: Route types from DB, clone/duplicate prescription
 
 ## In Progress
-(none - all tasks complete)
+(none - all Phase 1-3 gaps resolved)
 
 ## Future Enhancements
+- [ ] Guided first-time setup wizard
+- [ ] Structured JSON editor for favorite setup templates
 - [ ] Drug interaction checking in prescription form
-- [ ] Search/filter for prescription history
-- [ ] Pagination for all tables
-- [ ] Medication history view in patient details
-- [ ] Appointment → prescription flow (pass appointment_id)
 - [ ] Pharmacy/dispense module
 - [ ] Supabase migration (swap SQLite → Supabase)
-- [ ] Toast notifications for error handling
 - [ ] PDF export of prescriptions
 - [ ] Doctor-specific data isolation
-- [ ] Per-doctor RLS policies
 - [ ] Appointment reminders
-- [ ] Prescription templates from favorite setups
-
-### Identified Gaps (from User Journey Audit)
-- [GAP] Dashboard shows demo data instead of real SQLite counts (Dashboard.tsx:24-41)
-- [GAP] Prescription form doesn't read URL params (appointment_id, patient_id) (PrescriptionForm.tsx:539)
-- [GAP] No edit prescription flow (PrescriptionHistory.tsx:178-187 — view only)
-- [GAP] No delete confirmation dialogs on CRUD pages (all: Setup, FavoriteSetup, FavoriteMedicine, Instruction, Appointments, PatientInfo)
-- [GAP] Appointment status doesn't auto-update when prescription created (AppointmentsPage.tsx:149-161)
-- [GAP] Doctor info doesn't auto-load on prescription header (PrescriptionForm.tsx:721-780)
-- [GAP] Patient allergies/medication history displayed as raw JSON string in prescription dialog (PrescriptionHistory.tsx:273-300)
-- [GAP] Patient ID is free-text input with no searchable patient selector (PrescriptionForm.tsx:789-803)
-- [GAP] Silent mutation error handling (all CRUD pages — catch blocks have no toast/feedback)
-- [GAP] Favorite medicines not integrated into prescription drug autocomplete (hardcoded DRUG_OPTIONS at PrescriptionForm.tsx:63-74)
-- [GAP] Route types hardcoded in form instead of loaded from DB (PrescriptionForm.tsx:76-84)
-- [GAP] No print/reprint button in prescription history view dialog
-- [GAP] No "Create Prescription" button on patient info rows
-- [GAP] No clone/duplicate from previous prescription
+- [ ] Per-doctor RLS policies

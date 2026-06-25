@@ -43,3 +43,21 @@
 **Context:** Need consistent medical-professional typography without render-blocking CSS imports
 **Decision:** Use next/font/google Rubik (300-800 weight). CSS variable --font-rubik bound to fontFamily.sans in @theme inline. Replaces default Geist fonts.
 **Status:** ✅ Implemented
+
+## ADR-008: Dynamic Route Options from DB with Fallback
+**Date:** 2026-06-25
+**Context:** Route types and drug options were hardcoded in PrescriptionForm. Need to support user-defined route types and favorite medicines from the DB.
+**Decision:** Remove DRUG_OPTIONS and ROUTE_OPTIONS constants. Compute these via useMemo inside the component using API data (useFavoriteMedicines, useRouteTypes). Fallback to sensible defaults when DB empty. Pass as props to ArraySection which uses them for select options and datalist suggestions.
+**Status:** ✅ Implemented
+
+## ADR-009: Appointment Auto-Update on Prescription Save
+**Date:** 2026-06-25
+**Context:** Doctors must manually mark appointments as "Completed" after writing a prescription. This is an extra step that breaks the appointment→prescription workflow.
+**Decision:** When a prescription is saved from the appointment flow (has appointment_id URL param), auto-update the appointment status to "completed" via useUpdateAppointment mutation chained in the createPrescription onSuccess callback.
+**Status:** ✅ Implemented
+
+## ADR-010: Clone Prescription via URL Params + useEffect
+**Date:** 2026-06-25
+**Context:** Doctors need to create new prescriptions based on previous ones (follow-up visits, similar conditions). Requires pre-filling the entire form with existing data.
+**Decision:** Add clone_id URL param. History page has Clone button navigating to /prescription?clone_id=X. PrescriptionForm detects clone_id, fetches the prescription via usePrescription hook, and uses a useEffect to setValue for all form fields (with regenerated IDs). Effective 0-clone approach — no extra DAL function needed.
+**Status:** ✅ Implemented

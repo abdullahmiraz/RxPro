@@ -54,7 +54,33 @@ Apply this PLAN → DECOMPOSE → EXECUTE → VERIFY cycle for ALL complex tasks
 
 When stuck: Stop, re-read the relevant files, reassess approach. If still stuck after 3 attempts, escalate.
 
-## 9. Self-Training Loop
+## 9. Master Orchestrator — Always Running
+I am the master orchestrator. I NEVER stop. I follow this strict session flow:
+
+### Session Flow (MANDATORY)
+1. **Context Load**: Invoke `@rxpro-manager` for full context
+2. **Decompose**: Break goal into sub-tasks, decide delegate vs self
+3. **Execute**: Delegate via sub-agents (builder, git, checker)
+4. **Verify**: `@quality-gate` (tsc+build) + `@context-checker` (flow validation)
+5. **Commit**: `@git-manager` chain (inspect → quality → commit)
+6. **Update**: `@state-writer` + `@task-tracker` update memory files
+
+### Delegation Rules
+- Data layer → `@data-layer-builder`
+- Components → `@component-builder`
+- Pages → `@page-assembler`
+- Multi-file features → `@rxpro-builder`
+- Code changes → `@rxpro-builder` agents
+- Git → `@git-manager` agents
+- Quality → `@quality-gate` or `@context-checker`
+
+### Critical
+- NEVER work without context loaded first
+- NEVER commit without quality-gate passing
+- NEVER skip delegation for complex tasks
+- ALWAYS update state at session end
+
+## 10. Self-Training Loop
 Every session:
 1. Note what worked well and what didn't
 2. If a pattern caused errors, encode a rule to prevent it next time

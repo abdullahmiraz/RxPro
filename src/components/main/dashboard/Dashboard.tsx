@@ -11,11 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { Users, Calendar, Pill, TrendingUp } from "lucide-react"
+import { Users, Calendar, Pill, TrendingUp, Stethoscope, ClipboardList, Sparkles } from "lucide-react"
 import { useCookies } from "next-client-cookies"
+import Link from "next/link"
 import { usePatients } from "@/hooks/usePatients"
 import { useAppointments } from "@/hooks/useAppointments"
 import { usePrescriptions } from "@/hooks/usePrescriptions"
+import { useDoctorInfo } from "@/hooks/useDoctorInfo"
 
 const weeklyData = [8, 12, 6, 15, 10, 18, 9]
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -33,13 +35,16 @@ const maxValue = Math.max(...weeklyData)
 export default function Dashboard() {
   const cookies = useCookies()
   const doctorId = cookies.get("doctor_id") ?? ""
-  const doctorName = doctorId ? "Dr. [Name]" : "Doctor"
 
   const { data: patients, isLoading: patientsLoading } = usePatients()
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments(doctorId || undefined)
   const { data: prescriptions, isLoading: prescriptionsLoading } = usePrescriptions(doctorId || undefined)
+  const { data: doctorInfo, isLoading: doctorInfoLoading } = useDoctorInfo(doctorId || undefined)
 
-  const loading = patientsLoading || appointmentsLoading || prescriptionsLoading
+  const loading = patientsLoading || appointmentsLoading || prescriptionsLoading || doctorInfoLoading
+
+  const isSetupComplete = !!doctorInfo
+  const doctorName = (doctorInfo as Record<string, unknown> | undefined)?.doctor_name as string || "Doctor"
 
   const patientsCount = (patients as Record<string, unknown>[])?.length ?? 0
   const futureAppointments = (appointments as Record<string, unknown>[])?.filter(a => (a as { status?: string }).status === "scheduled").length ?? 0
@@ -55,6 +60,38 @@ export default function Dashboard() {
   return (
     <div>
       <PageHeader title="Dashboard" description={`Welcome back, ${doctorName}.`} />
+
+      {!isSetupComplete && !loading && (
+        <Card className="mb-8 border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <Sparkles className="mt-1 size-6 text-blue-600" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-blue-900">Getting Started</h3>
+                <p className="mb-4 mt-1 text-sm text-blue-700">Set up your clinic profile and data to start creating prescriptions.</p>
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+                  <Link href="/doctor-info" className="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-100">
+                    <Stethoscope className="size-4" />
+                    Doctor Info
+                  </Link>
+                  <Link href="/patient-info" className="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-100">
+                    <Users className="size-4" />
+                    Add Patients
+                  </Link>
+                  <Link href="/favorite-setup" className="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-100">
+                    <ClipboardList className="size-4" />
+                    Setup Templates
+                  </Link>
+                  <Link href="/favorite-medicine" className="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-100">
+                    <Pill className="size-4" />
+                    Favorite Meds
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => {

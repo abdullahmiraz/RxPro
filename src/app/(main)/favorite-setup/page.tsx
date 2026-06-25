@@ -15,7 +15,7 @@ import PageHeader from '@/components/shared/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+
 import {
   Table,
   TableBody,
@@ -33,20 +33,20 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, X } from 'lucide-react'
 
 interface FavoriteSetup {
   id: string
   name: string
   description: string
-  notes?: string
+  data?: string
   createdAt: string
 }
 
 const schema = yup.object({
   name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
   description: yup.string().required('Description is required'),
-  notes: yup.string(),
+  templateData: yup.string(),
 })
 
 type FormData = yup.InferType<typeof schema>
@@ -54,7 +54,18 @@ type FormData = yup.InferType<typeof schema>
 const defaultValues: FormData = {
   name: '',
   description: '',
-  notes: '',
+  templateData: '',
+}
+
+const SECTION_KEYS = ['complaints', 'examination', 'investigation', 'diagnosis', 'advice', 'medications'] as const
+
+const sectionLabels: Record<string, string> = {
+  complaints: 'Complaints',
+  examination: 'Examination',
+  investigation: 'Investigation',
+  diagnosis: 'Diagnosis',
+  advice: 'Advice',
+  medications: 'Medications',
 }
 
 export default function FavoriteSetupPage() {
@@ -65,6 +76,14 @@ export default function FavoriteSetupPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingFavorite, setEditingFavorite] = useState<FavoriteSetup | null>(null)
+  const [sectionItems, setSectionItems] = useState<Record<string, string[]>>({
+    complaints: [],
+    examination: [],
+    investigation: [],
+    diagnosis: [],
+    advice: [],
+    medications: [],
+  })
 
   const {
     register,
@@ -84,10 +103,27 @@ export default function FavoriteSetupPage() {
 
   const openEditDialog = useCallback((favorite: FavoriteSetup) => {
     setEditingFavorite(favorite)
+    const parsed: Record<string, string[]> = {}
+    try {
+      const raw = (favorite as any).data
+      if (typeof raw === 'string') {
+        Object.assign(parsed, JSON.parse(raw))
+      } else if (typeof raw === 'object' && raw) {
+        Object.assign(parsed, raw)
+      }
+    } catch { /* ignore */ }
+    setSectionItems({
+      complaints: parsed.complaints || [],
+      examination: parsed.examination || [],
+      investigation: parsed.investigation || [],
+      diagnosis: parsed.diagnosis || [],
+      advice: parsed.advice || [],
+      medications: parsed.medications || [],
+    })
     reset({
       name: favorite.name,
       description: favorite.description,
-      notes: favorite.notes,
+      templateData: favorite.data || '',
     })
     setDialogOpen(true)
   }, [reset])
@@ -97,27 +133,50 @@ export default function FavoriteSetupPage() {
       setDialogOpen(false)
       setEditingFavorite(null)
       reset(defaultValues)
+      setSectionItems({ complaints: [], examination: [], investigation: [], diagnosis: [], advice: [], medications: [] })
     }
   }, [reset])
 
   const mutationPending = createMutation.isPending || updateMutation.isPending
 
+  const addItem = useCallback((section: string) => {
+    setSectionItems(prev => ({ ...prev, [section]: [...prev[section], ''] }))
+  }, [])
+
+  const removeItem = useCallback((section: string, index: number) => {
+    setSectionItems(prev => ({
+      ...prev,
+      [section]: prev[section].filter((_, i) => i !== index),
+    }))
+  }, [])
+
+  const updateItem = useCallback((section: string, index: number, value: string) => {
+    setSectionItems(prev => {
+      const updated = [...prev[section]]
+      updated[index] = value
+      return { ...prev, [section]: updated }
+    })
+  }, [])
+
   const onSubmit = useCallback(
-    async (data: FormData) => {
+    async (formData: FormData) => {
       try {
+        const jsonData = JSON.stringify(sectionItems)
+        const payload = { name: formData.name, description: formData.description, data: jsonData }
         if (editingFavorite) {
-          await updateMutation.mutateAsync({ id: editingFavorite.id, data: data as any })
+          await updateMutation.mutateAsync({ id: editingFavorite.id, data: payload as any })
         } else {
-          await createMutation.mutateAsync(data as any)
+          await createMutation.mutateAsync(payload as any)
         }
         setDialogOpen(false)
         setEditingFavorite(null)
         reset(defaultValues)
+        setSectionItems({ complaints: [], examination: [], investigation: [], diagnosis: [], advice: [], medications: [] })
       } catch {
         toast.error('Failed to save favorite setup')
       }
     },
-    [editingFavorite, updateMutation, createMutation, reset]
+    [editingFavorite, updateMutation, createMutation, reset, sectionItems]
   )
 
   const handleDelete = useCallback(
@@ -221,7 +280,7 @@ export default function FavoriteSetupPage() {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-md" aria-label={editingFavorite ? 'Edit favorite setup' : 'Add new favorite setup'}>
+        <DialogContent className="sm:max-w-xl" aria-label={editingFavorite ? 'Edit favorite setup' : 'Add new favorite setup'}>
           <DialogHeader>
             <DialogTitle>{editingFavorite ? 'Edit Favorite Setup' : 'Add Favorite Setup'}</DialogTitle>
             <DialogDescription>
@@ -245,8 +304,52 @@ export default function FavoriteSetupPage() {
                 )}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea id="notes" rows={3} {...register('notes')} />
+                <Label>Template Sections</Label>
+                <div className="rounded-lg border max-h-[400px] overflow-y-auto">
+                  <div className="divide-y">
+                    {SECTION_KEYS.map((key) => (
+                      <div key={key} className="p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{sectionLabels[key]}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={`Add ${sectionLabels[key]} item`}
+                            onClick={() => addItem(key)}
+                          >
+                            <Plus className="size-3.5" />
+                          </Button>
+                        </div>
+                        {sectionItems[key].length === 0 ? (
+                          <p className="text-xs text-muted-foreground pl-1">No items</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {sectionItems[key].map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <Input
+                                  value={item}
+                                  onChange={(e) => updateItem(key, idx, e.target.value)}
+                                  placeholder={`Enter ${sectionLabels[key].toLowerCase()} item`}
+                                  className="h-8 text-sm"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={`Remove ${sectionLabels[key]} item`}
+                                  onClick={() => removeItem(key, idx)}
+                                >
+                                  <X className="size-3.5 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
             <DialogFooter showCloseButton>
