@@ -39,7 +39,7 @@ To swap to Supabase: rewrite `src/lib/dal.ts` to use supabase client + update `s
 ## Auth
 - Login: admin / password (rx_doctors table, security_word field)
 - Cookies: doctor_id + rx-token (base64 encoded JSON)
-- Proxy: validates token decodes to matching doctor_id
+- Proxy: `src/proxy.ts` — Next.js 16 renamed middleware to proxy. Export is `proxy`, NOT `middleware`. Build output `ƒ Proxy (Middleware)` confirms it runs. Do NOT flag as dead code.
 - Doctor ID in SQLite seed: `d1`
 
 ## Data Layer Files
@@ -89,3 +89,11 @@ npx tsc --noEmit     # TypeScript check (must pass: 0 errors)
 4. Verify: `npx tsc --noEmit` before any changes, `npm run build` after
 5. After changes: update `.opencode/memory/state.md` and `.opencode/memory/tasks.md`
 6. Commit with meaningful message: `git add -A && git commit -m "message"`
+
+**Agent verification rule (NEVER skip):**
+- Before declaring ANY code "dead", "not running", or "broken":
+  1. **Search online/docs first** — framework conventions change (e.g., Next.js 16 renamed middleware → proxy). Check official docs before assuming something is wrong.
+  2. **Check the ACTUAL build output** (`npm run build` / `npx tsc --noEmit`) — the `ƒ` prefix lists all registered middleware/proxy functions. If it's in the build output, it's running.
+  3. **Verify via the code path** — read the config, trace the imports, confirm it's wired. Don't rely on file naming conventions alone.
+  4. **If still uncertain** — search for updates, changelogs, or migration guides before asserting a claim.
+  5. **False positives erode trust** — say "I cannot verify this" rather than confidently asserting something incorrect. It's better to be uncertain and right than confident and wrong.

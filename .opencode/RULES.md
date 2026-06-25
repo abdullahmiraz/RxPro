@@ -62,6 +62,13 @@ The **RULES.kingdom.md** at the OpenCode Kingdom applies to all projects. Key se
 - **Field naming**: Frontend forms use camelCase; DAL expects snake_case — map in the page
 - **Build passes**: `npx tsc --noEmit` = 0 errors, `npm run build` = 0 errors
 
+### Agent Verification Rule (Kingdom Rule 7.5)
+- NEVER declare code "dead" or "broken" without:
+  1. Searching online/docs for current framework conventions
+  2. Checking `npm run build` output (`ƒ` prefix = running)
+  3. Tracing the actual code path (config → imports → wiring)
+- Uncertain? Say "cannot verify" — false positives waste time
+
 ### Config Schema Compliance (Kingdom Rule 8.5)
 - **NEVER add underscore-prefixed keys** to `opencode.json`, `opencode.jsonc`, or `tui.json`
 - Config files must conform to their declared `$schema` — unsupported keys are rejected at startup

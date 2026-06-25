@@ -1,5 +1,14 @@
 # RxPro - Prescription Management System
 
+## ⚠️ Known Audit Pitfalls (Read Before Analyzing)
+
+- **Next.js 16 proxy.ts IS correct.** The file is `proxy.ts`, export is `proxy`. NOT dead code. The build output shows `ƒ Proxy (Middleware)` confirming it runs. Do NOT flag it as "middleware not wired."
+- **API routes are intentionally excluded from proxy matcher** (`'/((?!api|...).*)'`). This is the standard Next.js 16 pattern — API routes handle their own auth. The API `route.ts` lacking auth is the real problem, not the proxy.
+- **`unsafe-inline` in CSP is expected** when using `headers()` in `next.config.ts`. The next-level fix is moving CSP to the proxy with nonces. Don't flag `unsafe-inline` without noting this context.
+- **Build output is the source of truth.** Before declaring anything "dead code" or "not running," always check `npm run build` output for the `ƒ` prefixes showing which middleware/proxy functions are registered.
+- **Search online/docs first.** Framework conventions change. Next.js 16 renamed middleware → proxy. Before making claims about a framework, check official docs or search for migration guides.
+- **Uncertain? Say so.** If you can't verify a claim from build output, docs, or code path, it's safer to say "cannot verify" than to assert something incorrect. False positives erode trust faster than uncertainty.
+
 ## Tech Stack
 - **Framework:** Next.js 16.2.9 (App Router)
 - **Language:** TypeScript (strict)
@@ -10,7 +19,7 @@
 - **Font:** Rubik via next/font/google
 - **Icons:** lucide-react
 - **Auth:** Custom cookie-based via next-client-cookies (doctor_id + base64 rx-token)
-- **Proxy validation:** `src/proxy.ts` (renamed from middleware.ts for Next.js 16)
+- **Proxy validation:** `src/proxy.ts` (Next.js 16 renamed `middleware.ts` → `proxy.ts`, and `export function middleware` → `export function proxy`. This IS the correct convention — do NOT flag it as dead code. Verify with build output: `ƒ Proxy (Middleware)` confirms it runs.)
 
 ## Architecture
 
