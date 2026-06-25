@@ -63,13 +63,16 @@ const handlers: Record<string, (params: Record<string, unknown>) => unknown> = {
 }
 
 export async function POST(request: NextRequest) {
+  let action = 'unknown'
   try {
     const body = await request.json()
-    const { action, params = {} } = body as { action: string; params: Record<string, unknown> }
+    const parsed = body as { action: string; params: Record<string, unknown> }
+    action = parsed.action ?? 'unknown'
+    const params = parsed.params ?? {}
 
     const handler = handlers[action]
     if (!handler) {
-      return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
+      return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
     }
 
     if (!PUBLIC_ACTIONS.has(action)) {
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
     const result = handler(params)
     return NextResponse.json({ data: result })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[API]', action, error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

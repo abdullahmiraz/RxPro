@@ -114,6 +114,10 @@ export default function PatientInfoPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [newAllergy, setNewAllergy] = useState("")
 
+  useEffect(() => {
+    setNewAllergy("")
+  }, [expandedId])
+
   const cachedAllergies = useMemo(() => new Map<string, string[]>(), [])
   const cachedMedHistory = useMemo(() => new Map<string, string[]>(), [])
 
@@ -209,13 +213,17 @@ export default function PatientInfoPage() {
   function addAllergy(patient: Patient) {
     if (!newAllergy.trim()) return
     const existing = cachedAllergies.get(patient.id) ?? []
-    cachedAllergies.set(patient.id, [...existing, newAllergy.trim()])
+    const updated = [...existing, newAllergy.trim()]
+    cachedAllergies.set(patient.id, updated)
+    updateMutation.mutate({ id: patient.id, data: { allergies: updated } as any })
     setNewAllergy("")
   }
 
   function removeAllergy(patientId: string, index: number) {
     const existing = cachedAllergies.get(patientId) ?? []
-    cachedAllergies.set(patientId, existing.filter((_, i) => i !== index))
+    const updated = existing.filter((_, i) => i !== index)
+    cachedAllergies.set(patientId, updated)
+    updateMutation.mutate({ id: patientId, data: { allergies: updated } as any })
   }
 
   if (isLoading) {

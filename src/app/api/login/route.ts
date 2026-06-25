@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, doctor: { id: doctorRecord.id, name: doctorRecord.name } })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Login failed'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[Login]', error)
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
   }
 }
