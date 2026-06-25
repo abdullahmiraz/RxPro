@@ -3,7 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import { hashPassword } from './auth'
 
-const DB_PATH = path.join(process.cwd(), 'data', 'rxpro.db')
+const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'rxpro.db')
 
 let db: Database.Database | null = null
 
@@ -17,11 +17,26 @@ export function getDb(): Database.Database {
     db.pragma('journal_mode = WAL')
     db.pragma('foreign_keys = ON')
     createTables(db)
+    runMigrations(db)
     seedData(db)
   }
   return db
 }
 
+const MIGRATIONS: string[] = [
+  // v1: Add doctor_id to rx_patients (already in CREATE TABLE above)
+  `ALTER TABLE rx_patients ADD COLUMN doctor_id TEXT REFERENCES rx_doctors(id) ON DELETE CASCADE`,
+]
+
+function runMigrations(db: Database.Database) {
+  db.exec(`CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)`)
+  const row = db.prepare('SELECT COALESCE(MAX(version), 0) as v FROM schema_version').get() as { v: number }
+  const current = row.v ?? 0
+  for (let i = current; i < MIGRATIONS.length; i++) {
+    db.exec(MIGRATIONS[i])
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(i + 1)
+  }
+}
 function createTables(db: Database.Database) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS rx_doctors (
@@ -147,6 +162,13 @@ function createTables(db: Database.Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE INDEX IF NOT EXISTS idx_appointments_patient ON rx_appointments(patient_id);
+    CREATE INDEX IF NOT EXISTS idx_appointments_doctor ON rx_appointments(doctor_id);
+    CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON rx_prescriptions(patient_id);
+    CREATE INDEX IF NOT EXISTS idx_prescriptions_doctor ON rx_prescriptions(doctor_id);
+    CREATE INDEX IF NOT EXISTS idx_prescriptions_appointment ON rx_prescriptions(appointment_id);
+    CREATE INDEX IF NOT EXISTS idx_doctor_info_doctor ON rx_doctor_info(doctor_id);
   `)
 }
 
