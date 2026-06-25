@@ -1,5 +1,6 @@
 import { getDb } from './database'
 import crypto from 'crypto'
+import { verifyPassword } from './auth'
 
 function generateId(): string {
   return crypto.randomUUID()
@@ -43,7 +44,11 @@ export function fetchDoctor(doctorId: string) {
 
 export function fetchDoctorByCredentials(name: string, securityWord: string) {
   const db = getDb()
-  return db.prepare('SELECT * FROM rx_doctors WHERE name = ? AND security_word = ?').get(name, securityWord) as Record<string, unknown> | undefined
+  const doctor = db.prepare('SELECT * FROM rx_doctors WHERE name = ?').get(name) as Record<string, unknown> | undefined
+  if (!doctor) return undefined
+  const hash = doctor.security_word as string
+  if (!hash || !verifyPassword(securityWord, hash)) return undefined
+  return doctor
 }
 
 export function fetchPatients() {

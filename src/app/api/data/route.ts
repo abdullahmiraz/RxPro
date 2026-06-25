@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as dal from '@/lib/dal'
 
+// Actions that don't require authentication (login only)
+const PUBLIC_ACTIONS = new Set(['fetchDoctorByCredentials'])
+
+function authenticate(request: NextRequest): { doctorId: string } | NextResponse {
+  const doctorId = request.cookies.get('doctor_id')?.value
+  const token = request.cookies.get('rx-token')?.value
+
+  if (!doctorId || !token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const decoded = JSON.parse(atob(token))
+    if (decoded.doctor_id !== doctorId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return { doctorId }
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+}
+
 const handlers: Record<string, (params: Record<string, unknown>) => unknown> = {
   fetchDoctor: (p) => dal.fetchDoctor(p.id as string),
   fetchDoctorByCredentials: (p) => dal.fetchDoctorByCredentials(p.name as string, p.securityWord as string),
@@ -51,6 +73,11 @@ export async function POST(request: NextRequest) {
     const handler = handlers[action]
     if (!handler) {
       return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
+    }
+
+    if (!PUBLIC_ACTIONS.has(action)) {
+      const auth = authenticate(request)
+      if (auth instanceof NextResponse) return auth
     }
 
     const result = handler(params)

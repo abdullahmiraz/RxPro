@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
+import { hashPassword } from './auth'
 
 const DB_PATH = path.join(process.cwd(), 'data', 'rxpro.db')
 
@@ -156,7 +157,7 @@ function seedData(db: Database.Database) {
     INSERT INTO rx_doctors (id, name, email, phone, address, qualifications, license_number, security_word)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
-  insert.run(doctorId, 'admin', 'doctor@rxpro.com', '+1-555-0100', '123 Medical Center Dr', 'MD', 'LIC-001', 'password')
+  insert.run(doctorId, 'admin', 'doctor@rxpro.com', '+1-555-0100', '123 Medical Center Dr', 'MD', 'LIC-001', hashPassword('password'))
 
   const insertDocInfo = db.prepare(`
     INSERT INTO rx_doctor_info (id, doctor_id, clinic_name, address, phone, email, license_number, qualifications, header_template, footer_template)

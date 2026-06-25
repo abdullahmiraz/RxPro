@@ -4,14 +4,12 @@ import { useState, useCallback, useRef, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
-import { useCookies } from "next-client-cookies"
 import { useRouter } from "next/navigation"
 import { Stethoscope, Eye, EyeOff, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import * as api from "@/api/api"
 
 const schema = yup.object({
   name: yup.string().required("Doctor name is required"),
@@ -28,7 +26,6 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const mountedRef = useRef(true)
-  const cookies = useCookies()
   const router = useRouter()
 
   useEffect(() => {
@@ -51,19 +48,16 @@ export default function Login() {
       setError(null)
 
       try {
-        const doctorResult = await api.fetchDoctorByCredentials(data.name, data.securityWord)
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: data.name, securityWord: data.securityWord }),
+        })
 
-        if (!doctorResult) {
-          throw new Error("Invalid credentials")
+        const json = await res.json()
+        if (!res.ok) {
+          throw new Error(json.error || 'Login failed')
         }
-
-        const doctor = doctorResult as { id: string; name: string; security_word: string }
-
-        const token = btoa(
-          JSON.stringify({ doctor_id: doctor.id, name: doctor.name })
-        )
-        cookies.set("doctor_id", doctor.id, { path: "/" })
-        cookies.set("rx-token", token, { path: "/" })
 
         if (mountedRef.current) {
           router.push("/dashboard")
@@ -78,7 +72,7 @@ export default function Login() {
         }
       }
     },
-    [cookies, router]
+    [router]
   )
 
   return (
