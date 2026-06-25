@@ -212,17 +212,29 @@ All pushed to `master` on 2026-06-25:
 | **C2** | Passwords hashed with bcryptjs (12 rounds) in seed data + DAL comparison | ✅ |
 | **C3** | Tokens signed with HMAC-SHA256 + `crypto.timingSafeEqual` verification | ✅ |
 | **H9b** | CSP moved to `proxy.ts` with per-request nonces, `strict-dynamic`, no `unsafe-inline` | ✅ |
+| **H12** | `/api/health` endpoint with DB connectivity check | ✅ |
+| **H9** | Allergies now persist via `updateMutation` on add/remove | ✅ |
+| **H5** | Error messages sanitized — no SQL/stack leaks to client | ✅ |
+| **H3** | Rate limiting on login — 10 attempts/IP/60s sliding window | ✅ |
+| **H1** | `doctor_id` isolation on patient CRUD (schema + DAL) | ✅ |
+| **M10** | QueryClient defaults — staleTime 30s, retry 1, no refetchOnFocus | ✅ |
 | **Model** | Deep agents switched from GLM-5.1 → Kimi K2.6 (cheaper) | ✅ |
 
-**Note:** After C2, delete `data/rxpro.db` so seed data re-runs with hashed passwords.
+**Note:** Delete `data/rxpro.db` before restarting to pick up hashed passwords + patient `doctor_id` column.
 
-## 🎯 Next Priority Fixes
+## 📋 Remaining (Not Started)
 
 | # | Issue | Effort | Impact |
 |---|-------|--------|--------|
-| H12 | Health check endpoint (`/api/health`) | 5 min | Ops readiness |
-| H9 | Allergies not persisted (data loss bug) | 15 min | Patient safety |
-| H5 | Sanitize error messages in route.ts | 5 min | Info leak |
-| H1 | Add doctor_id to patient CRUD | 30 min | Data isolation |
-| H3 | Rate limiting on login | 20 min | Brute force |
-| M10 | QueryClient defaults (staleTime, retry) | 5 min | Performance |
+| H6 | Migration system | 1h | Schema evolution |
+| H7 | Indexes on FK columns | 15m | Performance |
+| H8 | Transaction wrapping | 30m | Data integrity |
+| H10 | Dockerfile | 1h | Deployment |
+| H11 | Backup strategy | 30m | Disaster recovery |
+| H13 | Logging / error tracking | 2h | Observability |
+| M1 | DB path env var | 5m | Config |
+| M2 | CI/CD pipeline | 1h | Automation |
+| M4 | Session expiration | 10m | Security |
+| M5-M9 | UX improvements | Various | Quality |
+| M11-M16 | Minor fixes | Various | Quality |
+| L1-L12 | Low priority | Various | Polish |
