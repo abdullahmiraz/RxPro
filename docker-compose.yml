@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rxpro
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_PATH=/app/data/rxpro.db
+      - BACKUP_DIR=/app/backups
+    volumes:
+      - rxpro-data:/app/data
+      - rxpro-backups:/app/backups
+    restart: unless-stopped
+
+volumes:
+  rxpro-data:
+    driver: local
+  rxpro-backups:
+    driver: local

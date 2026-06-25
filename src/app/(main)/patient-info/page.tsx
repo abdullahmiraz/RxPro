@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, Fragment } from "react"
+import { useState, useMemo, useEffect, Fragment, useDeferredValue } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -109,6 +109,7 @@ export default function PatientInfoPage() {
   const deleteMutation = useDeletePatient()
 
   const [search, setSearch] = useState("")
+  const deferredSearch = useDeferredValue(search)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -137,9 +138,9 @@ export default function PatientInfoPage() {
   const filtered = useMemo(
     () =>
       patientList.filter((p) =>
-        p.name.toLowerCase().includes(search.toLowerCase())
+        p.name.toLowerCase().includes(deferredSearch.toLowerCase())
       ),
-    [patientList, search]
+    [patientList, deferredSearch]
   )
 
   const [page, setPage] = useState(1)
@@ -147,7 +148,7 @@ export default function PatientInfoPage() {
   const totalPages = Math.ceil(filtered.length / pageSize)
   const paginatedPatients = filtered.slice((page - 1) * pageSize, page * pageSize)
 
-  useEffect(() => setPage(1), [search])
+  useEffect(() => setPage(1), [deferredSearch])
 
   function getPatientWithExtras(p: Patient): Patient {
     return {

@@ -131,7 +131,8 @@
 }
 
 @media print {
-  .no-print { display: none !important; }
+  .no-print,
+  .print-hide { display: none !important; }
   body { background: white !important; }
 }
 

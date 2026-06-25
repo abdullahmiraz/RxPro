@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/database'
 
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try {
     const db = getDb()
     db.prepare('SELECT 1').get()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useId, useEffect, useMemo } from "react"
+import { useState, useCallback, useId, useEffect, useMemo, useDeferredValue } from "react"
 import {
   useForm,
   useFieldArray,
@@ -579,6 +579,7 @@ export default function PrescriptionForm({
   }, [routeTypes])
 
   const [patientSearch, setPatientSearch] = useState("")
+  const deferredPatientSearch = useDeferredValue(patientSearch)
   const [selectedPatient, setSelectedPatient] = useState<Record<string, unknown> | null>(null)
 
   const {
@@ -596,9 +597,9 @@ export default function PrescriptionForm({
   })
 
   const filteredPatients =
-    patientSearch.trim() && patients
+    deferredPatientSearch.trim() && patients
       ? (patients as Record<string, unknown>[]).filter((p) =>
-          String(p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase())
+          String(p.name ?? "").toLowerCase().includes(deferredPatientSearch.toLowerCase())
         )
       : []
 

@@ -63,7 +63,10 @@ const handlers: Record<string, (params: Record<string, unknown>) => unknown> = {
 }
 
 export async function POST(request: NextRequest) {
+  const reqId = crypto.randomUUID().substring(0, 8)
+  const start = Date.now()
   let action = 'unknown'
+  let status = 200
   try {
     const body = await request.json()
     const parsed = body as { action: string; params: Record<string, unknown> }
@@ -72,18 +75,26 @@ export async function POST(request: NextRequest) {
 
     const handler = handlers[action]
     if (!handler) {
+      status = 400
+      console.log(JSON.stringify({ reqId, method: 'POST', path: '/api/data', action, status, ms: Date.now() - start }))
       return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
     }
 
     if (!PUBLIC_ACTIONS.has(action)) {
       const auth = authenticate(request)
-      if (auth instanceof NextResponse) return auth
+      if (auth instanceof NextResponse) {
+        status = 401
+        console.log(JSON.stringify({ reqId, method: 'POST', path: '/api/data', action, status, ms: Date.now() - start }))
+        return auth
+      }
     }
 
     const result = handler(params)
+    console.log(JSON.stringify({ reqId, method: 'POST', path: '/api/data', action, status, ms: Date.now() - start }))
     return NextResponse.json({ data: result })
   } catch (error) {
-    console.error('[API]', action, error)
+    status = 500
+    console.error(JSON.stringify({ reqId, method: 'POST', path: '/api/data', action, status, ms: Date.now() - start, error: error instanceof Error ? error.message : 'Unknown' }))
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

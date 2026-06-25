@@ -10,10 +10,6 @@ function now(): string {
   return new Date().toISOString()
 }
 
-function row<T>(data: T): T {
-  return data
-}
-
 function rows<T>(data: T[]): T[] {
   return data
 }
@@ -26,15 +22,6 @@ function parseJson(val: string | null | undefined): unknown {
 function toJson<T>(val: T): string {
   if (typeof val === 'string') return val
   return JSON.stringify(val)
-}
-
-function scrub<T>(obj: T): T {
-  if (!obj || typeof obj !== 'object') return obj
-  const result = { ...obj } as Record<string, unknown>
-  for (const [key, val] of Object.entries(result)) {
-    if (val === undefined) result[key] = null
-  }
-  return result as T
 }
 
 export function fetchDoctor(doctorId: string) {

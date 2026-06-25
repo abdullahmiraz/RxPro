@@ -214,6 +214,16 @@ All pushed to `master` on 2026-06-25:
 | **H9b** | CSP moved to `proxy.ts` with per-request nonces, `strict-dynamic`, no `unsafe-inline` | ✅ |
 | **H6** | Migration system with `schema_version` tracking + ALTER TABLE support | ✅ |
 | **H7** | Indexes on all FK columns (appointments, prescriptions, doctor_info) | ✅ |
+| **H8** | Transaction wrapping in `seedData()` — atomic rollback on insert failure | ✅ |
+| **H10** | Dockerfile (multi-stage, node:22-slim) + docker-compose.yml with persistent volumes | ✅ |
+| **H11** | Backup system — `POST /api/backup`, keeps last 7, configurable dir | ✅ |
+| **H13** | Structured JSON request logging (reqId, action, status, ms) on all API routes | ✅ |
+| **M2** | CI/CD workflow — `.github/workflows/ci.yml` (tsc, build, audit) | ✅ |
+| **M5** | Search debounce via `useDeferredValue` on patient pages | ✅ |
+| **M9** | Print CSS — `.print-hide` class added to `@media print` | ✅ |
+| **M15** | `allowJs` set to `false` in tsconfig | ✅ |
+| **M16** | `.env.example` with documented env vars | ✅ |
+| **L1-L3** | Removed dead code (`row()`/`scrub()` functions) | ✅ |
 | **H12** | `/api/health` endpoint with DB connectivity check | ✅ |
 | **H9** | Allergies now persist via `updateMutation` on add/remove | ✅ |
 | **H5** | Error messages sanitized — no SQL/stack leaks to client | ✅ |
@@ -229,12 +239,10 @@ All pushed to `master` on 2026-06-25:
 
 | # | Issue | Effort | Impact |
 |---|-------|--------|--------|
-| H8 | Transaction wrapping | 30m | Data integrity |
-| H10 | Dockerfile | 1h | Deployment |
-| H11 | Backup strategy | 30m | Disaster recovery |
-| H13 | Logging / error tracking | 2h | Observability |
-| M2 | CI/CD pipeline | 1h | Automation |
-| M4 | Session expiration | 10m | Security |
-| M5-M9 | UX improvements | Various | Quality |
-| M11-M16 | Minor fixes | Various | Quality |
-| L1-L12 | Low priority | Various | Polish |
+| M4 | Session expiration (already 24h — document) | 5m | Security |
+| M6-M8 | UX improvements (clone effect, effect cleanup) | 30m | Quality |
+| M11 | Root error boundary | 15m | UX |
+| M12 | Mutation error handling in hooks | 20m | UX |
+| M13 | Pagination on patient list (LIMIT/OFFSET) | 15m | Performance |
+| M14 | Graceful DB shutdown (SIGTERM handler) | 10m | Data safety |
+| L4-L12 | Low priority polish | Various | — |
