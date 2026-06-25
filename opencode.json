@@ -14,16 +14,71 @@
       "instructions": "Read .opencode/agents/rxpro-manager.md and .opencode/memory/ for full context",
       "hide": false
     },
+    "task-tracker": {
+      "description": "Manages the project todo list under rxpro-manager",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/task-tracker.md for task management workflow",
+      "hide": false
+    },
+    "state-writer": {
+      "description": "Maintains state.md and decisions.md under rxpro-manager",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/state-writer.md for state update workflow",
+      "hide": false
+    },
+    "context-loader": {
+      "description": "Provides full project context from memory files under rxpro-manager",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/context-loader.md for context gathering workflow",
+      "hide": false
+    },
     "git-manager": {
       "description": "Git commit/push manager - monitors changes, decides atomic commits",
       "mode": "subagent",
       "instructions": "Read .opencode/agents/git-manager.md for commit workflow",
       "hide": false
     },
+    "change-inspector": {
+      "description": "Analyzes git changes and categorizes them under git-manager",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/change-inspector.md for change analysis workflow",
+      "hide": false
+    },
+    "quality-gate": {
+      "description": "Runs tsc + build checks before commits under git-manager",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/quality-gate.md for quality check workflow",
+      "hide": false
+    },
+    "commit-executor": {
+      "description": "Formats and executes git commits under git-manager",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/commit-executor.md for commit execution workflow",
+      "hide": false
+    },
     "rxpro-builder": {
-      "description": "Builds RxPro prescription management system",
+      "description": "Primary builder - builds RxPro prescription management system",
       "mode": "full",
-      "instructions": "Read .opencode/RULES.md then .opencode/agents/RxPro-context.md before making changes"
+      "instructions": "Read .opencode/RULES.md then .opencode/agents/RxPro-context.md before making changes",
+      "hide": false
+    },
+    "component-builder": {
+      "description": "Builds UI components using shadcn/ui v4 under rxpro-builder",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/component-builder.md for component patterns",
+      "hide": false
+    },
+    "data-layer-builder": {
+      "description": "Builds API layer, DAL, hooks, database queries under rxpro-builder",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/data-layer-builder.md for data layer patterns",
+      "hide": false
+    },
+    "page-assembler": {
+      "description": "Assembles full pages from components + data + forms under rxpro-builder",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/page-assembler.md for page patterns",
+      "hide": false
     }
   }
 }

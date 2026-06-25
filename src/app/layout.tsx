@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Rubik } from "next/font/google";
 import { cookies } from "next/headers";
-import { CookiesProvider } from "next-client-cookies";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Providers } from "@/components/shared/Providers";
 import "./globals.css";
 
 const rubik = Rubik({
@@ -16,15 +14,13 @@ export const metadata: Metadata = {
   description: "Modern prescription management platform for healthcare providers",
 };
 
-const queryClient = new QueryClient();
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const allCookies = cookieStore.getAll();
+  const cookieRecords = cookieStore.getAll();
 
   return (
     <html
@@ -32,11 +28,7 @@ export default async function RootLayout({
       className={`${rubik.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <CookiesProvider value={allCookies}>
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>{children}</TooltipProvider>
-          </QueryClientProvider>
-        </CookiesProvider>
+        <Providers cookies={cookieRecords}>{children}</Providers>
       </body>
     </html>
   );

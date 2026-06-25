@@ -46,3 +46,7 @@ next-env.d.ts
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Dev server logs
+dev-server.log
+dev-server2.log
