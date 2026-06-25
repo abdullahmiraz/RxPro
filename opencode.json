@@ -1,8 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "_kingdom_version": "1.0.0",
-  "_kingdom_path": "C:\\Users\\neo\\.config\\opencode\\kingdom",
-  "_comment": "RxPro — Kingdom-linked project. Royal agents + knights come from the kingdom. Only project-specific agents declared here.",
   "plugin": [
     "oh-my-openagent",
     "@capybearista/opencode-adversarial-review@latest",
