@@ -51,18 +51,24 @@ export function fetchDoctorByCredentials(name: string, securityWord: string) {
   return doctor
 }
 
-export function fetchPatients() {
+export function fetchPatients(doctorId?: string) {
   const db = getDb()
-  const patients = rows(db.prepare('SELECT * FROM rx_patients ORDER BY created_at DESC').all() as Record<string, unknown>[])
+  const sql = doctorId
+    ? 'SELECT * FROM rx_patients WHERE doctor_id = ? ORDER BY created_at DESC'
+    : 'SELECT * FROM rx_patients ORDER BY created_at DESC'
+  const patients = rows((doctorId ? db.prepare(sql).all(doctorId) : db.prepare(sql).all()) as Record<string, unknown>[])
   for (const patient of patients) {
     patient.allergies = parseJson(patient.allergies as string)
   }
   return patients
 }
 
-export function fetchPatient(id: string) {
+export function fetchPatient(id: string, doctorId?: string) {
   const db = getDb()
-  const patient = db.prepare('SELECT * FROM rx_patients WHERE id = ?').get(id) as Record<string, unknown> | undefined
+  const sql = doctorId
+    ? 'SELECT * FROM rx_patients WHERE id = ? AND doctor_id = ?'
+    : 'SELECT * FROM rx_patients WHERE id = ?'
+  const patient = (doctorId ? db.prepare(sql).get(id, doctorId) : db.prepare(sql).get(id)) as Record<string, unknown> | undefined
   if (patient) {
     patient.allergies = parseJson(patient.allergies as string)
   }
@@ -74,10 +80,11 @@ export function createPatient(data: Record<string, unknown>) {
   const id = generateId()
   const timestamp = now()
   db.prepare(`
-    INSERT INTO rx_patients (id, name, age, gender, phone, email, address, blood_group, date_of_birth, allergies, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO rx_patients (id, doctor_id, name, age, gender, phone, email, address, blood_group, date_of_birth, allergies, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
+    data.doctor_id ?? null,
     data.name ?? null,
     data.age ?? null,
     data.gender ?? null,
@@ -93,10 +100,10 @@ export function createPatient(data: Record<string, unknown>) {
   return fetchPatient(id)
 }
 
-export function updatePatient(id: string, data: Record<string, unknown>) {
+export function updatePatient(id: string, data: Record<string, unknown>, doctorId?: string) {
   const db = getDb()
   const timestamp = now()
-  const existing = fetchPatient(id)
+  const existing = doctorId ? fetchPatient(id, doctorId) : fetchPatient(id)
   if (!existing) return null
   const merged: Record<string, unknown> = { ...existing, ...data, updated_at: timestamp }
   db.prepare(`
@@ -118,9 +125,12 @@ export function updatePatient(id: string, data: Record<string, unknown>) {
   return fetchPatient(id)
 }
 
-export function deletePatient(id: string) {
+export function deletePatient(id: string, doctorId?: string) {
   const db = getDb()
-  db.prepare('DELETE FROM rx_patients WHERE id = ?').run(id)
+  const sql = doctorId
+    ? 'DELETE FROM rx_patients WHERE id = ? AND doctor_id = ?'
+    : 'DELETE FROM rx_patients WHERE id = ?'
+  ;(doctorId ? db.prepare(sql).run(id, doctorId) : db.prepare(sql).run(id))
   return { success: true }
 }
 

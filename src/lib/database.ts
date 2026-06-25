@@ -40,6 +40,7 @@ function createTables(db: Database.Database) {
 
     CREATE TABLE IF NOT EXISTS rx_patients (
       id TEXT PRIMARY KEY,
+      doctor_id TEXT NOT NULL REFERENCES rx_doctors(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       age INTEGER,
       gender TEXT,
@@ -52,6 +53,7 @@ function createTables(db: Database.Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE INDEX IF NOT EXISTS idx_patients_doctor ON rx_patients(doctor_id);
 
     CREATE TABLE IF NOT EXISTS rx_appointments (
       id TEXT PRIMARY KEY,
@@ -170,14 +172,14 @@ function seedData(db: Database.Database) {
 
   const patientIds = ['p1', 'p2', 'p3', 'p4', 'p5']
   const insertPatient = db.prepare(`
-    INSERT INTO rx_patients (id, name, age, gender, phone, email, address, blood_group, date_of_birth, allergies)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO rx_patients (id, doctor_id, name, age, gender, phone, email, address, blood_group, date_of_birth, allergies)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
-  insertPatient.run('p1', 'John Smith', 45, 'Male', '+1-555-0101', 'john@email.com', '100 Oak St', 'A+', '1979-03-15', '["Penicillin"]')
-  insertPatient.run('p2', 'Sarah Johnson', 32, 'Female', '+1-555-0102', 'sarah@email.com', '200 Elm St', 'B-', '1992-07-22', '[]')
-  insertPatient.run('p3', 'Michael Brown', 58, 'Male', '+1-555-0103', 'michael@email.com', '300 Pine St', 'O+', '1966-11-08', '["Sulfa", "Aspirin"]')
-  insertPatient.run('p4', 'Emily Davis', 28, 'Female', '+1-555-0104', 'emily@email.com', '400 Maple Ave', 'AB+', '1996-05-30', '[]')
-  insertPatient.run('p5', 'Robert Wilson', 65, 'Male', '+1-555-0105', 'robert@email.com', '500 Cedar Ln', 'A-', '1959-09-12', '["Latex"]')
+  insertPatient.run('p1', doctorId, 'John Smith', 45, 'Male', '+1-555-0101', 'john@email.com', '100 Oak St', 'A+', '1979-03-15', '["Penicillin"]')
+  insertPatient.run('p2', doctorId, 'Sarah Johnson', 32, 'Female', '+1-555-0102', 'sarah@email.com', '200 Elm St', 'B-', '1992-07-22', '[]')
+  insertPatient.run('p3', doctorId, 'Michael Brown', 58, 'Male', '+1-555-0103', 'michael@email.com', '300 Pine St', 'O+', '1966-11-08', '["Sulfa", "Aspirin"]')
+  insertPatient.run('p4', doctorId, 'Emily Davis', 28, 'Female', '+1-555-0104', 'emily@email.com', '400 Maple Ave', 'AB+', '1996-05-30', '[]')
+  insertPatient.run('p5', doctorId, 'Robert Wilson', 65, 'Male', '+1-555-0105', 'robert@email.com', '500 Cedar Ln', 'A-', '1959-09-12', '["Latex"]')
 
   const insertAppt = db.prepare(`
     INSERT INTO rx_appointments (id, patient_id, doctor_id, appointment_date, appointment_time, status, reason)
