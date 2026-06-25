@@ -48,7 +48,11 @@ export function fetchDoctorByCredentials(name: string, securityWord: string) {
 
 export function fetchPatients() {
   const db = getDb()
-  return rows(db.prepare('SELECT * FROM rx_patients ORDER BY created_at DESC').all() as Record<string, unknown>[])
+  const patients = rows(db.prepare('SELECT * FROM rx_patients ORDER BY created_at DESC').all() as Record<string, unknown>[])
+  for (const patient of patients) {
+    patient.allergies = parseJson(patient.allergies as string)
+  }
+  return patients
 }
 
 export function fetchPatient(id: string) {

@@ -105,10 +105,9 @@ RxPro is a single-doctor prescription management system with 9 core modules:
 7. Type the Patient ID manually into the free-text field
 8. Fill prescription, save, print
 
-**Status:** ✅ Patient CRUD works. Search, expand, edit all functional.
+**Status:** ✅ Patient CRUD works. Search, expand, edit all functional. FileText button creates prescription.
 
 **Gaps:**
-- ❌ No button on patient row to "Create Prescription" (must manually navigate + type ID)
 - ❌ Patient ID is typed manually - risk of error, no validation that patient exists
 - ❌ Patient allergies/medication history not displayed on prescription form
 - ❌ Medication history in patient info just shows list strings from DB - not structured
@@ -290,7 +289,7 @@ Doctor (rx_doctors)
 ### Minor Gaps
 | # | Gap | Location | Impact |
 |---|-----|----------|--------|
-| 16 | No "Create Prescription" button on patient row | `PatientInfoPage.tsx` | Extra navigation step |
+ | 16 | ~~No "Create Prescription" button on patient row~~ | ✅ Fixed in prev session | FileText icon added |
 | 17 | No guided first-time setup | - | New users confused |
 | 18 | Template editor is free text, not structured | `FavoriteSetupPage.tsx` | Error-prone JSON entry |
 | 19 | No error toasts on CRUD failures | All pages | Unnoticed failures |
