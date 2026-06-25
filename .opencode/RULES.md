@@ -62,6 +62,14 @@ The **RULES.kingdom.md** at the OpenCode Kingdom applies to all projects. Key se
 - **Field naming**: Frontend forms use camelCase; DAL expects snake_case — map in the page
 - **Build passes**: `npx tsc --noEmit` = 0 errors, `npm run build` = 0 errors
 
+### Config Schema Compliance (Kingdom Rule 8.5)
+- **NEVER add underscore-prefixed keys** to `opencode.json`, `opencode.jsonc`, or `tui.json`
+- Config files must conform to their declared `$schema` — unsupported keys are rejected at startup
+- Metadata goes in `.opencode/kingdom/kingdom-link.txt` or `.opencode/memory/`
+- Use `.jsonc` extension if comments are needed
+- Agent extensions go in `oh-my-openagent.jsonc`, not `opencode.json`
+- Validate: check schema at `https://opencode.ai/config.json` before adding new fields
+
 ### Kingdom Link
 - Kingdom: `C:\Users\neo\.config\opencode\kingdom`
 - Version: 1.0.0
