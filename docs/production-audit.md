@@ -212,11 +212,14 @@ All pushed to `master` on 2026-06-25:
 | **C2** | Passwords hashed with bcryptjs (12 rounds) in seed data + DAL comparison | ✅ |
 | **C3** | Tokens signed with HMAC-SHA256 + `crypto.timingSafeEqual` verification | ✅ |
 | **H9b** | CSP moved to `proxy.ts` with per-request nonces, `strict-dynamic`, no `unsafe-inline` | ✅ |
+| **H6** | Migration system with `schema_version` tracking + ALTER TABLE support | ✅ |
+| **H7** | Indexes on all FK columns (appointments, prescriptions, doctor_info) | ✅ |
 | **H12** | `/api/health` endpoint with DB connectivity check | ✅ |
 | **H9** | Allergies now persist via `updateMutation` on add/remove | ✅ |
 | **H5** | Error messages sanitized — no SQL/stack leaks to client | ✅ |
 | **H3** | Rate limiting on login — 10 attempts/IP/60s sliding window | ✅ |
 | **H1** | `doctor_id` isolation on patient CRUD (schema + DAL) | ✅ |
+| **M1** | DB path configurable via `DATABASE_PATH` env var | ✅ |
 | **M10** | QueryClient defaults — staleTime 30s, retry 1, no refetchOnFocus | ✅ |
 | **Model** | Deep agents switched from GLM-5.1 → Kimi K2.6 (cheaper) | ✅ |
 
@@ -226,13 +229,10 @@ All pushed to `master` on 2026-06-25:
 
 | # | Issue | Effort | Impact |
 |---|-------|--------|--------|
-| H6 | Migration system | 1h | Schema evolution |
-| H7 | Indexes on FK columns | 15m | Performance |
 | H8 | Transaction wrapping | 30m | Data integrity |
 | H10 | Dockerfile | 1h | Deployment |
 | H11 | Backup strategy | 30m | Disaster recovery |
 | H13 | Logging / error tracking | 2h | Observability |
-| M1 | DB path env var | 5m | Config |
 | M2 | CI/CD pipeline | 1h | Automation |
 | M4 | Session expiration | 10m | Security |
 | M5-M9 | UX improvements | Various | Quality |
