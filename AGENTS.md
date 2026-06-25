@@ -75,6 +75,49 @@ npm run build        # Production build (must pass: 0 errors)
 npx tsc --noEmit     # TypeScript check (must pass: 0 errors)
 ```
 
+## Agentic Setup (oh-my-openagent + OpenCode Go)
+
+RxPro uses **oh-my-openagent** (v4.13) for agent orchestration. It provides:
+- **Background agents** — parallel task execution via `task(category="deep", run_in_background=true)`
+- **Discipline agents** — King Sisyphus (orchestrator), Queen Metis (wisdom), Princes (domain commanders)
+- **Built-in MCPs** — Playwright (browser), Context7 (docs), Exa (web search), Claude-mem (memory)
+- **Slash commands** — `ultrawork`, `hyperplan`, `security-research`, `start-work`, `handoff`
+
+### Provider & Models
+- **Provider:** `opencode-go` — OpenCode Go subscription ($10/mo, ~$60/mo cap)
+- **Models:**
+  | Tier | Model | Cost (per 1M tokens) | Used For |
+  |------|-------|----------------------|----------|
+  | 🧠 High-thinking | `opencode-go/minimax-m3` | $0.30 / $1.20 | `deep`, `ultrabrain`, `oracle` |
+  | ⚡ Default | `opencode-go/deepseek-v4-flash` | $0.14 / $0.28 | general work, `explore`, `librarian` |
+  | 🚀 Fast | `opencode-go/mimo-v2.5` | $0.14 / $0.28 | `quick`, `unspecified-low` |
+- **Config:** `~/.config/opencode/oh-my-openagent.jsonc`
+- **Disabled:** `freellmapi` (stale token), `openai`
+
+### Agent Categories (for `task()`)
+| Category | Model | When to use |
+|----------|-------|-------------|
+| `deep` | minimax-m3 | Autonomous research, multi-file analysis, production audits |
+| `ultrabrain` | minimax-m3 | Complex logic, architecture decisions |
+| `visual-engineering` | deepseek-v4-flash | UI/frontend work |
+| `unspecified-high` | deepseek-v4-flash | General implementation |
+| `quick` | mimo-v2.5 | Single-file typo fixes, trivial changes |
+| `unspecified-low` | mimo-v2.5 | Simplest possible changes |
+
+### Subagent Types (via `subagent_type=`)
+- `oracle` — deep reasoning, architecture consultation (uses minimax-m3)
+- `explore` — codebase grep, pattern discovery (uses deepseek-v4-flash)
+- `librarian` — external docs/OSS research (uses deepseek-v4-flash)
+
+### Sidebar Panels (TUI plugins in `tui.json`)
+- `opencode-agents-sidebar` — shows agent hierarchy in right sidebar
+- `opencode-sidebar-background-sessions` — shows running background agents
+
+### Memory & Persistence
+- `.opencode/memory/` — state, tasks, decisions
+- `claude-mem` plugin — cross-session observation memory
+- Kingdom link: `~/.config/opencode/kingdom/` (v1.1.0, Palace & Territories)
+
 ## Agent Memory System
 - `.opencode/agents/rxpro-manager.md` — Project manager agent
 - `.opencode/agents/RxPro-context.md` — Full project context
