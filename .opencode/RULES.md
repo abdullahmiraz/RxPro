@@ -1,96 +1,75 @@
-# RxPro - Orchestrator Rules
-**These rules apply to EVERY agent session. Read before any work.**
+# RxPro — Kingdom Rules
+**These rules bind EVERY session. Read before any work.**
 
-## 1. Memory First
-Before ANY code changes, read these files in order:
-1. `.opencode/memory/tasks.md` — current task list and status
-2. `.opencode/memory/state.md` — project state snapshot
-3. `.opencode/memory/decisions.md` — architecture decisions that constrain changes
+---
 
-## 2. Manager Agent Invocation
-At session start, invoke `@rxpro-manager` to get full context:
-- Ask "What is the current project state and what should I work on next?"
-- The manager reads all memory files and returns a brief
+## Universal Kingdom Law
+The **RULES.kingdom.md** at the OpenCode Kingdom applies to all projects. Key sections:
+- **Context First**: Read memory files before any code change
+- **Delegate or Die**: Never work alone on complex tasks
+- **Quality Gate**: Typecheck + build must pass before every commit
+- **One Task at a Time**: Only one `in_progress` task
+- **State is Truth**: Update memory every session end
+- **Meta-Cognition**: PLAN → DECOMPOSE → EXECUTE → VERIFY
+- **Failure Protocol**: After 3 failures, STOP, REVERT, CONSULT `@oracle`
 
-## 3. Task Discipline
-- NEVER skip a task. Complete each task fully before moving to the next.
-- If blocked, note the blocker in `.opencode/memory/tasks.md` and move to the next independent task.
-- Update `.opencode/memory/tasks.md` after EVERY completed task (mark `[x]`).
-- Update `.opencode/memory/state.md` after EVERY session with current build status.
+---
 
-## 4. Quality Gates
-Before committing ANY change:
-- Run `npx tsc --noEmit` — must pass with ZERO errors
-- Run `npm run build` — must pass with ZERO errors
-- If either fails, FIX before committing
+## RxPro-Specific Rules
 
-## 5. Commit Discipline
-Every commit must:
-- Have a meaningful message describing WHAT changed and WHY
-- Group related changes together
-- NOT include `.env*`, `data/`, `node_modules/`, `.next/`
-
-## 6. No Task Left Behind
-The full task backlog is in `.opencode/memory/tasks.md`. Future enhancements are listed under "Future Enhancements". Each session should:
-1. Check if there are uncompleted main tasks
-2. If all main tasks are done, pick from Future Enhancements
-3. Never lose the list — it's the source of truth
-
-## 7. Architecture Constraints
-- SQLite (better-sqlite3) for storage — pages use API routes, never direct DB access
-- All client data fetching goes through `src/hooks/` TanStack Query hooks
-- No `any` types anywhere
-- Imports use `@/` alias never relative paths
-- Forms use react-hook-form + yup (yupResolver)
-- Components use shadcn/ui v4 from `@/components/ui/`
-
-## 8. Meta-Cognition (Thinking Protocol)
-Apply this PLAN → DECOMPOSE → EXECUTE → VERIFY cycle for ALL complex tasks:
-
-**PLAN**: Before any code change, state the goal, list sub-tasks, identify dependencies
-**DECOMPOSE**: Split into parallel vs sequential work. Read first, edit second.
-**EXECUTE**: One change at a time. Check tool output between steps. Update todos as you go.
-**VERIFY**: Run tsc + build. Check UX (loading/empty/error states). Update memory files.
-
-When stuck: Stop, re-read the relevant files, reassess approach. If still stuck after 3 attempts, escalate.
-
-## 9. Master Orchestrator — Always Running
-I am the master orchestrator. I NEVER stop. I follow this strict session flow:
+### Hierarchy (Who Reports Where)
+```
+👑 KING SISYPHUS (primary, always running)
+ ├── 👸 QUEEN METIS (wisdom, context)
+ │    ├── context-loader
+ │    └── context-checker
+ ├── 🫅 PRINCE OF MEMORY (state, tasks)
+ │    ├── task-tracker
+ │    └── state-writer
+ ├── 🫅 PRINCE OF CODE (building, quality)
+ │    ├── component-builder
+ │    ├── data-layer-builder
+ │    ├── page-assembler
+ │    └── quality-gate
+ ├── 🫅 PRINCE OF GIT (commit discipline)
+ │    ├── git-manager
+ │    ├── change-inspector
+ │    └── commit-executor
+ ├── 🏘️ rxpro-manager (project-specific — reports to King)
+ └── 🏘️ rxpro-builder (project-specific — reports to King)
+```
 
 ### Session Flow (MANDATORY)
-1. **Context Load**: Invoke `@rxpro-manager` for full context
-2. **Decompose**: Break goal into sub-tasks, decide delegate vs self
-3. **Execute**: Delegate via sub-agents (builder, git, checker)
-4. **Verify**: `@quality-gate` (tsc+build) + `@context-checker` (flow validation)
-5. **Commit**: `@git-manager` chain (inspect → quality → commit)
-6. **Update**: `@state-writer` + `@task-tracker` update memory files
+1. **Phase 0**: King classifies request → research/implement/investigate/fix
+2. **Context Load**: `@queen-metis` → "Load full context"
+3. **Decompose**: Break goal into sub-tasks
+4. **Execute**: Delegate via the hierarchy above
+5. **Verify**: `@quality-gate` (tsc+build) + `@context-checker`
+6. **Commit**: `@prince-of-git` chain
+7. **Update**: `@prince-of-memory` chain
 
-### Delegation Rules
-- Data layer → `@data-layer-builder`
-- Components → `@component-builder`
-- Pages → `@page-assembler`
-- Multi-file features → `@rxpro-builder`
-- Code changes → `@rxpro-builder` agents
-- Git → `@git-manager` agents
-- Quality → `@quality-gate` or `@context-checker`
+### Architecture Constraints
+- **Stack**: Next.js 16 App Router, TypeScript strict, Tailwind v4, shadcn/ui v4
+- **Data**: SQLite (better-sqlite3) — API routes, never direct DB from client
+- **API flow**: `src/api/api.ts` → POST `src/app/api/data/route.ts` → `src/lib/dal.ts` → `src/lib/database.ts`
+- **Client data**: TanStack Query hooks in `src/hooks/`
+- **Forms**: react-hook-form + yup (yupResolver)
+- **Components**: shadcn/ui v4 from `@/components/ui/`, lucide-react icons, `cn()` from `@/lib/utils`
+- **Font**: Rubik via next/font/google
+- **Auth**: Cookie-based (next-client-cookies), admin/password login
+- **No `any` types** anywhere
+- **Imports**: `@/` alias, never relative paths
+- **Field naming**: Frontend forms use camelCase; DAL expects snake_case — map in the page
+- **Build passes**: `npx tsc --noEmit` = 0 errors, `npm run build` = 0 errors
 
-### Critical
-- NEVER work without context loaded first
-- NEVER commit without quality-gate passing
-- NEVER skip delegation for complex tasks
-- ALWAYS update state at session end
+### Kingdom Link
+- Kingdom: `C:\Users\neo\.config\opencode\kingdom`
+- Version: 1.0.0
+- CLI: `./kingdom init/link/sync/promote/backup/restore/status`
+- Regenerate: `./kingdom restore`
+- Sync: `./kingdom sync`
 
-## 10. Self-Training Loop
-Every session:
-1. Note what worked well and what didn't
-2. If a pattern caused errors, encode a rule to prevent it next time
-3. If a plugin/agent would help, install it
-4. Update skills based on new knowledge gained
-
-## 11. Reusable Template
-This project was bootstrapped from the opencode template at `.opencode/template/`.
-To create a new project from this template:
-1. Copy `.opencode/template/` to a fresh project
-2. Run `pwsh .opencode/template/init.ps1 -ProjectName "myapp" -ProjectDescription "..." -BuildCommand "npm run build" -TypecheckCommand "npx tsc --noEmit"`
-3. Edit the generated files to customize for your tech stack
-See `.opencode/template/init.ps1` for full usage.
+### Project-Specific Agents (stay in this project)
+- `rxpro-manager` — RxPro state, tasks, decisions
+- `rxpro-builder` — RxPro feature builder
+- `RxPro-context` — RxPro tech stack, routes, patterns

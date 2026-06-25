@@ -1,0 +1,6 @@
+KINGDOM_VERSION: 1.0.0
+LINKED_DATE: 2026-06-25
+KINGDOM_PATH: C:\Users\neo\.config\opencode\kingdom
+REGENERATE_CMD: bash C:\Users\neo\.config\opencode\kingdom\scripts\regenerate.sh
+SYNC_CMD: bash C:\Users\neo\.config\opencode\kingdom\scripts\sync-down.sh
+INIT_CMD: bash C:\Users\neo\.config\opencode\kingdom\scripts\init-project.sh --name "rxpro" --path "D:\code\PORTFOLIO_BUSINESS\projects\rxpro"

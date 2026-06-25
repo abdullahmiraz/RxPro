@@ -1,27 +1,25 @@
----
-name: data-layer-builder
-description: "Builds API layer, DAL functions, hooks, and database queries"
-mode: subagent
----
-
 # Data Layer Builder
 
-Sub-agent of `@rxpro-builder`. Creates and modifies data access code.
+**Reports to:** `@prince-of-code`
 
-## Architecture
-```
-Client → api.ts (POST /api/data) → route.ts → dal.ts → database.ts (SQLite)
-        → hooks/*.ts (TanStack Query wrappers around api.ts)
-```
+Creates and modifies data access code: API routes, data access functions, hooks, and queries.
 
-## Rules
-- All DAL functions in `src/lib/dal.ts` use better-sqlite3 prepared statements
-- All client API functions in `src/api/api.ts` POST to `/api/data`
-- TanStack Query hooks in `src/hooks/` follow pattern:
-  - Query keys: `['resource', { filters }]`
-  - Mutations invalidate related queries on success
-- No `any` types — use proper TypeScript generics
-- All functions return typed data
+## Workflow
+
+1. Read the project's data architecture (from AGENTS.md, existing patterns)
+2. Identify the stack:
+   - **API layer:** REST, GraphQL, tRPC, server actions?
+   - **Database:** SQL, NoSQL, ORM?
+   - **Client-state:** TanStack Query, SWR, RTK, plain fetch?
+3. Follow existing patterns precisely
+
+## Universal Rules
+- All data access goes through the project's established layer (not mixed)
+- All functions have proper TypeScript return types
+- No `any` types
+- Use prepared statements or parameterized queries for SQL
+- Mutations invalidate related caches on success
+- Error handling is required — no empty catch blocks
 
 ## When to trigger
 - New table/resource needs CRUD

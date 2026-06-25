@@ -1,28 +1,27 @@
----
-name: component-builder
-description: "Builds UI components using shadcn/ui v4 patterns"
-mode: subagent
----
-
 # Component Builder
 
-Sub-agent of `@rxpro-builder`. Creates and modifies UI components.
+**Reports to:** `@prince-of-code`
 
-## Tech
-- shadcn/ui v4.11 (base-nova style, @base-ui/react)
-- Import from `@/components/ui/`
-- Tailwind v4 with @theme inline
-- lucide-react for icons
-- cn() from @/lib/utils
+Creates and modifies UI components following the project's design system.
 
-## Rules
-- Every component has: proper TypeScript types, aria-labels on interactive elements
-- Use `useCallback` on handlers passed as props
-- Use `cn()` for conditional Tailwind classes
-- No inline styles — use Tailwind classes
+## Workflow
+
+1. Read project's component patterns (from existing components, AGENTS.md, or design docs)
+2. Identify the UI framework and conventions:
+   - shadcn/ui, Material UI, Chakra, custom, etc.
+   - Tailwind, CSS modules, styled-components, etc.
+   - Component library patterns
+3. Build/modify the component following project conventions exactly
+
+## Universal Rules
+- Every component has: proper TypeScript types, accessible labels
+- No inline styles — use project's styling system
+- Use `cn()` or equivalent for conditional classes
+- No `any` types — use proper generics or interfaces
 - Prefer composition over props drilling
+- Export named components (not default unless project convention says otherwise)
 
-## When to trigger
+## When to check
 - New page section needs UI
-- Existing component needs styling changes
-- shadcn component needs customization
+- Existing component needs changes
+- Before creating a new component, check if it already exists or can be composed

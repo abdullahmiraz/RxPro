@@ -1,5 +1,12 @@
 # RxPro - Project State Snapshot
-**Last Updated:** 2026-06-25 (afternoon session)
+**Last Updated:** 2026-06-25 (kingdom migration)
+
+## 👑 Kingdom Status
+- **Linked to:** OpenCode Kingdom v1.0.0
+- **Kingdom path:** `C:\Users\neo\.config\opencode\kingdom`
+- **Agents source:** Royal agents (king/) + knights (knights/) from kingdom. Project-specific: `rxpro-manager`, `rxpro-builder`, `RxPro-context`.
+- **CLI:** `./kingdom init/link/sync/promote/backup/restore/status`
+- **Regeneration:** `./kingdom restore` from `backup/` mirror — instant
 
 ## Build Status
 - tsc --noEmit: ✅ PASSES (0 errors)
@@ -13,8 +20,8 @@
 - **Hooks:** 5 (usePatients, useAppointments, usePrescriptions, useSetup, useDoctorInfo) — useFavoriteMedicines, useRouteTypes also in useSetup
 - **Prescription module:** types.ts, PrescriptionForm.tsx (999→1045 lines), PrescriptionHistory.tsx, PrintPrescription.tsx
 - **Skills:** meta-cognition (PLAN→DECOMPOSE→EXECUTE→VERIFY), self-review (quality checklist)
-- **Agent files:** 6 (rxpro-manager, RxPro-context, context-checker, memory/tasks, memory/decisions, memory/state)
-- **Plugin config:** opencode-skillful, opencode-goal-plugin, oh-my-opencode, + 3 @capybearista plugins
+- **Agent files:** 18 (5 royal + 11 knights + 2 project-specific from kingdom)
+- **Plugin config:** oh-my-openagent + 3 @capybearista plugins
 
 ## Auth
 - Login creds: admin / password

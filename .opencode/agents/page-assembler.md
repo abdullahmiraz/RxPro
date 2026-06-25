@@ -1,34 +1,38 @@
----
-name: page-assembler
-description: "Assembles pages from components, data layer, and forms"
-mode: subagent
----
-
 # Page Assembler
 
-Sub-agent of `@rxpro-builder`. Creates full pages by combining UI components, data hooks, and form logic.
+**Reports to:** `@prince-of-code`
 
-## Pattern for every page
+Assembles full pages by combining UI components, data hooks, and form logic.
+
+## Workflow
+
+1. Read the page requirements and existing patterns
+2. Identify all pieces needed:
+   - Data fetching hooks
+   - UI components (call `@component-builder` if new ones needed)
+   - Form logic (if CRUD)
+   - Navigation/routing
+3. Assemble the page following project conventions
+
+## Universal Page Pattern
 ```tsx
 'use client'
 
 export default function Page() {
-  // 1. Data fetching (hooks from @/hooks/)
-  // 2. Form state (react-hook-form + yup)
-  // 3. Callbacks (useCallback)
-  // 4. Render: PageHeader + content + dialogs
+  // 1. Data fetching (project's query hooks)
+  // 2. Form state (project's form library)
+  // 3. Callbacks and handlers
+  // 4. Render: Header + content + dialogs/modals
 }
 ```
 
-## Requirements
-- PageHeader with title + description
-- Loading skeleton while data loads
+## Must Include
+- PageHeader or equivalent with title
+- Loading skeleton/spinner while data loads
 - Empty state when no data
-- Error handling via toast from sonner
-- TanStack Query hooks for data
-- react-hook-form + yup for forms (if CRUD)
-- Pagination for tables (10 per page)
-- aria-labels on all interactive elements
+- Error handling (toast, alert, or inline error)
+- Proper TypeScript types
+- Responsive layout
 
 ## When to trigger
 - New route needs to be built
