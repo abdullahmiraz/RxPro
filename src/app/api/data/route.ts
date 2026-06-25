@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as dal from '@/lib/dal'
+import { verifyToken } from '@/lib/auth'
 
 // Actions that don't require authentication (login only)
 const PUBLIC_ACTIONS = new Set(['fetchDoctorByCredentials'])
@@ -12,15 +13,11 @@ function authenticate(request: NextRequest): { doctorId: string } | NextResponse
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  try {
-    const decoded = JSON.parse(atob(token))
-    if (decoded.doctor_id !== doctorId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    return { doctorId }
-  } catch {
+  const decoded = verifyToken(token)
+  if (!decoded || decoded.doctor_id !== doctorId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  return { doctorId }
 }
 
 const handlers: Record<string, (params: Record<string, unknown>) => unknown> = {

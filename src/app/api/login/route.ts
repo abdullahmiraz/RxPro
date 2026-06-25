@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import * as dal from '@/lib/dal'
+import { signToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const doctorRecord = doctor as { id: string; name: string }
-    const token = btoa(JSON.stringify({ doctor_id: doctorRecord.id, name: doctorRecord.name }))
+    const token = signToken(doctorRecord.id, doctorRecord.name)
     const cookieStore = await cookies()
 
     cookieStore.set('doctor_id', doctorRecord.id, {
