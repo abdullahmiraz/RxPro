@@ -1,5 +1,5 @@
 # RxPro - Project State Snapshot
-**Last Updated:** 2026-06-25 (session 5: C6+H2+H4 security hardening + backup auth + Queen Metis supervision)
+**Last Updated:** 2026-06-25 (session 6: PDF export + model config + DialogFooter fix)
 
 ## 👑 Kingdom Status
 - **Linked to:** OpenCode Kingdom v1.1.0 (Palace & Territories)
@@ -11,22 +11,31 @@
 
 ## Build Status
 - tsc --noEmit: ✅ PASSES (0 errors)
-- npm run build: ✅ PASSES (0 errors, 16 routes, Proxy registered)
+- npm run build: ✅ PASSES (0 errors, 17 routes, Proxy registered)
 
-## Security Hardening Complete (C6+H2+H4+Backup)
-- C6: doctor_id always sourced from authenticated session cookie — route.ts overrides client body
-- H2: DAL ownership checks on all single-record operations (appointments, prescriptions patients)
-- H4: Origin/Referer CSRF protection on /api/data via ALLOWED_ORIGIN env var
-- Backup: /api/backup secured with HMAC auth + origin check
-- 34 of 44 audit findings resolved; remaining L4-L12 low-priority polish
+## Model Config (updated session 6)
+- **All agents use `deepseek-v4-flash-free`** (no provider prefix — `opencode-go/` was broken)
+- Config: `C:\Users\neo\.config\opencode\oh-my-openagent.jsonc`
+- Old config used `opencode-go/deepseek-v4-flash` which doesn't exist
+- AGENTS.md updated to match
+
+## Security Hardening Complete (44/44 audit findings)
+- C1-C6: ✅ Session-enforced doctor_id, DAL ownership checks, CSRF, backups secured
+- H1-H13: ✅ All high-severity findings resolved
+- M1-M16: ✅ All medium-severity findings resolved
+- L1-L12: ✅ All low-severity polish (age max=150, follow-up min=today, mobile sidebar, shadcn/supabase devDeps, etc.)
+
+## Phase 1 Feature Complete
+- ✅ **PDF export** — dedicated print route at `/prescription/[id]/print` with auto-print trigger, "Download PDF" button in PrescriptionHistory view dialog (opens in new tab, browser print-to-PDF). Zero npm deps added.
+- ✅ **JSON editor** — Favorite setup already had structured section editor (6 sections with add/remove items), not a raw textarea.
 
 ## File Count
-- **Pages:** 11 (login, dashboard, setup, favorite-setup, favorite-medicine, instruction, doctor-info, patient-info, appointments, prescription, not-found)
+- **Pages:** 12 (login, dashboard, setup, favorite-setup, favorite-medicine, instruction, doctor-info, patient-info, appointments, prescription, prescription/[id]/print, not-found)
 - **Shared components:** Sidebar, PageHeader, Dashboard
 - **shadcn/ui components:** 21 (button, card, table, dialog, input, label, select, separator, tooltip, dropdown-menu, badge, tabs, checkbox, switch, popover, command, sheet, breadcrumb, progress, pagination, textarea)
 - **Data layer:** database.ts, dal.ts, route.ts, api.ts
 - **Hooks:** 5 (usePatients, useAppointments, usePrescriptions, useSetup, useDoctorInfo) — useFavoriteMedicines, useRouteTypes also in useSetup
-- **Prescription module:** types.ts, PrescriptionForm.tsx (999→1045 lines), PrescriptionHistory.tsx, PrintPrescription.tsx
+- **Prescription module:** types.ts, PrescriptionForm.tsx, PrescriptionHistory.tsx, PrintPrescription.tsx, prescription-transform.ts
 - **Skills:** meta-cognition (PLAN→DECOMPOSE→EXECUTE→VERIFY), self-review (quality checklist)
 - **Agent files:** 18 (5 royal + 11 knights + 2 project-specific from kingdom)
 - **Plugin config:** oh-my-openagent + 3 @capybearista plugins
@@ -62,10 +71,15 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 - [x] Doctor Info page (API-connected, auto-loads into prescription header)
 - [x] Patient Info page (API-connected, search, expandable details, allergies, Create Rx button)
 - [x] Appointments page (API-connected, date filter, auto-updates to completed)
-- [x] Prescription module (12-section form, patient search, template loading, URL params, clone/edit, history with print/print)
+- [x] Prescription module (12-section form, patient search, template loading, URL params, clone/edit, history with print/PDF download)
+- [x] PDF export (/prescription/[id]/print route, auto-print trigger, Download PDF button)
+- [x] All 44 audit findings resolved (C1-C6, H1-H13, M1-M16, L1-L12)
 - [x] All gaps resolved (Phase 1+2+3): 20 gaps from user journey audit
+- [x] Model config unified to deepseek-v4-flash-free (no more opencode-go/ prefix)
 
 ## Bug Fixes
+- **2026-06-25 (session 6):** oh-my-openagent model config used non-existent `opencode-go/` prefix — changed to `deepseek-v4-flash-free` (no prefix) across all agents/categories. Background agents were entering fallback death spiral with wrong models.
+- **2026-06-25 (session 6):** PrescriptionHistory dialog footer used raw `<div>` instead of `<DialogFooter>` — replaced per codebase convention.
 - **2026-06-25:** Patient Info page expand chevron → blank page. `fetchPatients()` returned `allergies` as raw JSON string; expandable detail row called `.map()` on it. Added `parseJson()` in `fetchPatients()` (was already in `fetchPatient()`). Root cause: DAL inconsistency between list and single-get.
 - **2026-06-25 (session 2):** Console error `Query data cannot be undefined` for `["doctorInfo","d1"]` — missing seed data in `rx_doctor_info` table. Added seed data for doctor `d1` with clinic name, address, templates.
 - **2026-06-25 (session 2):** PrescriptionForm hardcoded `"d1"` — changed to read `doctor_id` from cookies (with `"d1"` fallback) so multi-doctor auth works.
@@ -75,12 +89,10 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 - **2026-06-25 (session 4):** Rewrote `docs/user-journey.md` with 10 practical daily flows (not theoretical scenarios). Updated `RxPro-context.md` and `rxpro-manager.md` agents. Verified all flows with Playwright: dashboard live data, patient search+select, history empty state. Zero console errors.
 - **2026-06-25 (session 5):** C6+H2+H4 security hardening. Route.ts now injects authenticated doctorId into all DAL calls (C6). Added doctor_id ownership checks to appointments & prescriptions DAL ops (H2). Added Origin/Referer CSRF protection (H4). Secured `/api/backup` with HMAC auth + origin check (Metis finding). All verified with 2 deep agents + Queen Metis supervision. 34/44 audit findings resolved.
 
-## Future Enhancements (Low Priority)
+## Future Enhancements (Post-Phase 1)
 1. Guided first-time setup wizard
-2. Structured JSON editor for favorite setup templates
-3. Drug interaction checking
-4. Pharmacy/dispense module
-5. Supabase migration
-6. PDF export
-7. Doctor-specific data isolation
-8. Appointment reminders
+2. Drug interaction checking
+3. Pharmacy/dispense module
+4. Supabase migration
+5. Doctor-specific data isolation
+6. Appointment reminders
