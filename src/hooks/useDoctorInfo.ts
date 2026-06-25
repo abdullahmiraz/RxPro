@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import * as api from '@/api/api'
 
 export function useDoctorInfo(doctorId: string | undefined) {
@@ -19,6 +20,9 @@ export function useUpsertDoctorInfo() {
       if (doctorId) {
         queryClient.invalidateQueries({ queryKey: ['doctorInfo', doctorId] })
       }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
     },
   })
 }

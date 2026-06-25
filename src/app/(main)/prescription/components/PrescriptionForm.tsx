@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useId, useEffect, useMemo, useDeferredValue } from "react"
+import { useState, useCallback, useId, useEffect, useMemo, useDeferredValue, useRef } from "react"
 import {
   useForm,
   useFieldArray,
@@ -36,6 +36,7 @@ import { useFavoriteSetups, useFavoriteMedicines, useRouteTypes } from "@/hooks/
 import { usePatients } from "@/hooks/usePatients"
 import { useDoctorInfo } from "@/hooks/useDoctorInfo"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import type { PrescriptionFormData } from "../types"
 
 interface SectionState {
@@ -525,6 +526,8 @@ export default function PrescriptionForm({
   onPrint,
 }: PrescriptionFormProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
+  const hasCloned = useRef(false)
+  const hasLoadedDoctor = useRef(false)
 
   const { data: favoriteSetups, isLoading: isLoadingTemplates } = useFavoriteSetups()
 
@@ -562,7 +565,7 @@ export default function PrescriptionForm({
   const drugOptions = useMemo(() => {
     const meds = favoriteMedicines as Record<string, unknown>[] | undefined
     if (!meds || meds.length === 0) {
-      return ["Amoxicillin 500mg", "Azithromycin 250mg", "Cetirizine 10mg", "Metformin 500mg", "Lisinopril 10mg", "Amlodipine 5mg", "Omeprazole 20mg", "Paracetamol 500mg", "Ibuprofen 400mg", "Prednisolone 5mg"]
+      return []
     }
     return meds.map((m) => m.name as string)
   }, [favoriteMedicines])
@@ -570,7 +573,7 @@ export default function PrescriptionForm({
   const routeSelectOptions = useMemo(() => {
     const types = routeTypes as Record<string, unknown>[] | undefined
     if (!types || types.length === 0) {
-      return [{ value: "oral", label: "Oral" }, { value: "iv", label: "IV" }, { value: "im", label: "IM" }, { value: "topical", label: "Topical" }, { value: "sublingual", label: "Sublingual" }, { value: "inhalation", label: "Inhalation" }, { value: "rectal", label: "Rectal" }]
+      return []
     }
     return types.map((r) => ({
       value: (r.name as string).toLowerCase(),
@@ -695,12 +698,12 @@ export default function PrescriptionForm({
   }, [selectedTemplateId, favoriteSetups, setValue])
 
   useEffect(() => {
-    if (doctorInfo) {
-      setValue("headerData.doctorName", (doctorInfo.doctor_name as string) || "")
-      setValue("headerData.clinicName", (doctorInfo.clinic_name as string) || "")
-      setValue("headerData.address", (doctorInfo.address as string) || "")
-      setValue("headerData.licenseNumber", (doctorInfo.license_number as string) || "")
-    }
+    if (!doctorInfo || hasLoadedDoctor.current) return
+    hasLoadedDoctor.current = true
+    setValue("headerData.doctorName", (doctorInfo.doctor_name as string) || "")
+    setValue("headerData.clinicName", (doctorInfo.clinic_name as string) || "")
+    setValue("headerData.address", (doctorInfo.address as string) || "")
+    setValue("headerData.licenseNumber", (doctorInfo.license_number as string) || "")
   }, [doctorInfo, setValue])
 
   useEffect(() => {
@@ -714,7 +717,8 @@ export default function PrescriptionForm({
   }, [urlPatientId, patients, setValue])
 
   useEffect(() => {
-    if (!cloneData) return
+    if (!cloneData || hasCloned.current) return
+    hasCloned.current = true
     const d = cloneData as Record<string, unknown>
     const hd = d.header_data as Record<string, string> | undefined
     if (hd) {
@@ -986,6 +990,26 @@ export default function PrescriptionForm({
           isOpen={sections[sectionKey]}
           onToggle={() => toggleSection(sectionKey)}
         >
+          {sectionKey === "medications" && (
+            <div className="mb-3 space-y-2">
+              {drugOptions.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No favorites configured.{" "}
+                  <Link href="/favorite-medicine" className="text-blue-600 underline hover:text-blue-700">
+                    Configure favorite medicines
+                  </Link>
+                </p>
+              )}
+              {routeSelectOptions.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No routes configured.{" "}
+                  <Link href="/instruction" className="text-blue-600 underline hover:text-blue-700">
+                    Configure route types
+                  </Link>
+                </p>
+              )}
+            </div>
+          )}
           <ArraySection
             sectionKey={sectionKey}
             control={control}

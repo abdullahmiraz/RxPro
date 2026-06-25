@@ -260,10 +260,14 @@ function seedData(db: Database.Database) {
 
 export function closeDb() {
   if (db) {
+    db.pragma('wal_checkpoint(TRUNCATE)')
     db.close()
     db = null
   }
 }
+
+process.on('SIGTERM', () => { closeDb(); process.exit(0) })
+process.on('SIGINT', () => { closeDb(); process.exit(0) })
 
 export function backupDatabase(): string {
   const dbInstance = getDb()

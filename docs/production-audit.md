@@ -239,7 +239,7 @@ All pushed to `master` on 2026-06-25:
 
 | # | Issue | Effort | Impact |
 |---|-------|--------|--------|
-| M4 | Session expiration (already 24h — document) | 5m | Security |
+| M4 | Session expiration — already 24h via `maxAge: 86400` in login route | ✅ Documented |
 | M6-M8 | UX improvements (clone effect, effect cleanup) | 30m | Quality |
 | M11 | Root error boundary | 15m | UX |
 | M12 | Mutation error handling in hooks | 20m | UX |

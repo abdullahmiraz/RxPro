@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import * as api from '@/api/api'
 
 export function useAppointments(doctorId: string | undefined) {
@@ -24,6 +25,9 @@ export function useCreateAppointment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -36,6 +40,9 @@ export function useUpdateAppointment() {
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
       queryClient.invalidateQueries({ queryKey: ['appointments', id] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -45,6 +52,9 @@ export function useDeleteAppointment() {
     mutationFn: (id: string) => api.deleteAppointment(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
     },
   })
 }

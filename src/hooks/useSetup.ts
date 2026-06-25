@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import * as api from '@/api/api'
 
 // ── Setup ───────────────────────────────────────────────────────────────────
@@ -17,6 +18,9 @@ export function useCreateSetup() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['setup'] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -29,6 +33,9 @@ export function useUpdateSetup() {
       queryClient.invalidateQueries({ queryKey: ['setup'] })
       queryClient.invalidateQueries({ queryKey: ['setup', id] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -38,6 +45,9 @@ export function useDeleteSetup() {
     mutationFn: (id: string) => api.deleteSetup(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['setup'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
     },
   })
 }
@@ -58,6 +68,9 @@ export function useCreateFavoriteSetup() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favoriteSetups'] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -70,6 +83,9 @@ export function useUpdateFavoriteSetup() {
       queryClient.invalidateQueries({ queryKey: ['favoriteSetups'] })
       queryClient.invalidateQueries({ queryKey: ['favoriteSetups', id] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -79,6 +95,9 @@ export function useDeleteFavoriteSetup() {
     mutationFn: (id: string) => api.deleteFavoriteSetup(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favoriteSetups'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
     },
   })
 }
@@ -99,6 +118,9 @@ export function useCreateFavoriteMedicine() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favoriteMedicines'] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -111,6 +133,9 @@ export function useUpdateFavoriteMedicine() {
       queryClient.invalidateQueries({ queryKey: ['favoriteMedicines'] })
       queryClient.invalidateQueries({ queryKey: ['favoriteMedicines', id] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -120,6 +145,9 @@ export function useDeleteFavoriteMedicine() {
     mutationFn: (id: string) => api.deleteFavoriteMedicine(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favoriteMedicines'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
     },
   })
 }
@@ -140,6 +168,9 @@ export function useCreateInstruction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instructions'] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -152,6 +183,9 @@ export function useUpdateInstruction() {
       queryClient.invalidateQueries({ queryKey: ['instructions'] })
       queryClient.invalidateQueries({ queryKey: ['instructions', id] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -161,6 +195,9 @@ export function useDeleteInstruction() {
     mutationFn: (id: string) => api.deleteInstruction(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instructions'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
     },
   })
 }
@@ -181,6 +218,9 @@ export function useCreateRouteType() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['routeTypes'] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -193,6 +233,9 @@ export function useUpdateRouteType() {
       queryClient.invalidateQueries({ queryKey: ['routeTypes'] })
       queryClient.invalidateQueries({ queryKey: ['routeTypes', id] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
+    },
   })
 }
 
@@ -202,6 +245,9 @@ export function useDeleteRouteType() {
     mutationFn: (id: string) => api.deleteRouteType(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['routeTypes'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Operation failed')
     },
   })
 }

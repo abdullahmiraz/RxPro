@@ -38,12 +38,21 @@ export function fetchDoctorByCredentials(name: string, securityWord: string) {
   return doctor
 }
 
-export function fetchPatients(doctorId?: string) {
+export function fetchPatients(doctorId?: string, limit?: number, offset?: number) {
   const db = getDb()
-  const sql = doctorId
+  let sql = doctorId
     ? 'SELECT * FROM rx_patients WHERE doctor_id = ? ORDER BY created_at DESC'
     : 'SELECT * FROM rx_patients ORDER BY created_at DESC'
-  const patients = rows((doctorId ? db.prepare(sql).all(doctorId) : db.prepare(sql).all()) as Record<string, unknown>[])
+  const params: (string | number)[] = doctorId ? [doctorId] : []
+  if (limit !== undefined) {
+    sql += ' LIMIT ?'
+    params.push(limit)
+    if (offset !== undefined) {
+      sql += ' OFFSET ?'
+      params.push(offset)
+    }
+  }
+  const patients = rows((params.length > 0 ? db.prepare(sql).all(...params) : db.prepare(sql).all()) as Record<string, unknown>[])
   for (const patient of patients) {
     patient.allergies = parseJson(patient.allergies as string)
   }
