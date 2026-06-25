@@ -228,21 +228,29 @@ All pushed to `master` on 2026-06-25:
 | **H9** | Allergies now persist via `updateMutation` on add/remove | ✅ |
 | **H5** | Error messages sanitized — no SQL/stack leaks to client | ✅ |
 | **H3** | Rate limiting on login — 10 attempts/IP/60s sliding window | ✅ |
+| **H4** | CSRF protection on `/api/data` — Origin/Referer header check against `ALLOWED_ORIGIN` env var (default `http://localhost:3000`), 403 on mismatch | ✅ |
 | **H1** | `doctor_id` isolation on patient CRUD (schema + DAL) | ✅ |
+| **C6** | `doctor_id` always sourced from authenticated session — route.ts overrides client `params.data.doctor_id` for create/update actions and `params.doctorId` for list/single-record actions, after the HMAC token check | ✅ |
+| **H2** | DAL ownership checks — `fetchAppointment`, `fetchPrescription`, `updateAppointment`, `updatePrescription`, `deleteAppointment`, `deletePrescription` now accept optional `doctorId?` and filter by `doctor_id`; unauthorized access returns `null`/`undefined` | ✅ |
 | **M1** | DB path configurable via `DATABASE_PATH` env var | ✅ |
 | **M10** | QueryClient defaults — staleTime 30s, retry 1, no refetchOnFocus | ✅ |
 | **Model** | Deep agents switched from GLM-5.1 → Kimi K2.6 (cheaper) | ✅ |
 
+| **Backup** | `/api/backup` secured with HMAC token auth + Origin/Referer CSRF check | ✅ |
+| **Model** | Deep agents switched to MiniMax M3 ($0.30/M tokens, cheapest effective) | ✅ |
+
 **Note:** Delete `data/rxpro.db` before restarting to pick up hashed passwords + patient `doctor_id` column.
 
-## 📋 Remaining (Not Started)
+## 📋 Remaining
 
 | # | Issue | Effort | Impact |
 |---|-------|--------|--------|
 | M4 | Session expiration — already 24h via `maxAge: 86400` in login route | ✅ Documented |
-| M6-M8 | UX improvements (clone effect, effect cleanup) | 30m | Quality |
-| M11 | Root error boundary | 15m | UX |
-| M12 | Mutation error handling in hooks | 20m | UX |
-| M13 | Pagination on patient list (LIMIT/OFFSET) | 15m | Performance |
-| M14 | Graceful DB shutdown (SIGTERM handler) | 10m | Data safety |
+| M6 | Clone effect ref guard | ✅ Prev session |
+| M7 | Doctor info effect ref guard | ✅ Prev session |
+| M8 | Empty state for drug/route fallbacks | ✅ Prev session |
+| M11 | Root error boundary | ✅ Prev session |
+| M12 | Mutation error toasts on all hooks | ✅ Prev session |
+| M13 | Pagination on patient list | ✅ Prev session |
+| M14 | Graceful DB shutdown | ✅ Prev session |
 | L4-L12 | Low priority polish | Various | — |

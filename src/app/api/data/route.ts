@@ -5,6 +5,36 @@ import { verifyToken } from '@/lib/auth'
 // Actions that don't require authentication (login only)
 const PUBLIC_ACTIONS = new Set(['fetchDoctorByCredentials'])
 
+// Actions that accept a `data` object — authenticated doctorId overrides any client-supplied value
+const DATA_ACTIONS_WITH_DOCTOR_ID = new Set([
+  'createPatient',
+  'createAppointment',
+  'createPrescription',
+  'updateAppointment',
+  'updatePrescription',
+  'upsertDoctorInfo',
+])
+
+// Actions that take `doctorId` as a top-level param (list-fetch by doctor)
+const LIST_FETCH_DOCTOR_ACTIONS = new Set([
+  'fetchAppointments',
+  'fetchPrescriptions',
+  'fetchDoctorInfo',
+])
+
+// Single-record operations that need doctorId for ownership checks
+const SINGLE_RECORD_ACTIONS = new Set([
+  'fetchPatient',
+  'fetchAppointment',
+  'fetchPrescription',
+  'updatePatient',
+  'updateAppointment',
+  'updatePrescription',
+  'deletePatient',
+  'deleteAppointment',
+  'deletePrescription',
+])
+
 function authenticate(request: NextRequest): { doctorId: string } | NextResponse {
   const doctorId = request.cookies.get('doctor_id')?.value
   const token = request.cookies.get('rx-token')?.value
@@ -23,21 +53,21 @@ function authenticate(request: NextRequest): { doctorId: string } | NextResponse
 const handlers: Record<string, (params: Record<string, unknown>) => unknown> = {
   fetchDoctor: (p) => dal.fetchDoctor(p.id as string),
   fetchDoctorByCredentials: (p) => dal.fetchDoctorByCredentials(p.name as string, p.securityWord as string),
-  fetchPatients: () => dal.fetchPatients(),
-  fetchPatient: (p) => dal.fetchPatient(p.id as string),
+  fetchPatients: (p) => dal.fetchPatients(p.doctorId as string | undefined),
+  fetchPatient: (p) => dal.fetchPatient(p.id as string, p.doctorId as string | undefined),
   createPatient: (p) => dal.createPatient(p.data as Record<string, unknown>),
-  updatePatient: (p) => dal.updatePatient(p.id as string, p.data as Record<string, unknown>),
-  deletePatient: (p) => dal.deletePatient(p.id as string),
+  updatePatient: (p) => dal.updatePatient(p.id as string, p.data as Record<string, unknown>, p.doctorId as string | undefined),
+  deletePatient: (p) => dal.deletePatient(p.id as string, p.doctorId as string | undefined),
   fetchAppointments: (p) => dal.fetchAppointments(p.doctorId as string),
-  fetchAppointment: (p) => dal.fetchAppointment(p.id as string),
+  fetchAppointment: (p) => dal.fetchAppointment(p.id as string, p.doctorId as string | undefined),
   createAppointment: (p) => dal.createAppointment(p.data as Record<string, unknown>),
-  updateAppointment: (p) => dal.updateAppointment(p.id as string, p.data as Record<string, unknown>),
-  deleteAppointment: (p) => dal.deleteAppointment(p.id as string),
+  updateAppointment: (p) => dal.updateAppointment(p.id as string, p.data as Record<string, unknown>, p.doctorId as string | undefined),
+  deleteAppointment: (p) => dal.deleteAppointment(p.id as string, p.doctorId as string | undefined),
   fetchPrescriptions: (p) => dal.fetchPrescriptions(p.doctorId as string),
-  fetchPrescription: (p) => dal.fetchPrescription(p.id as string),
+  fetchPrescription: (p) => dal.fetchPrescription(p.id as string, p.doctorId as string | undefined),
   createPrescription: (p) => dal.createPrescription(p.data as Record<string, unknown>),
-  updatePrescription: (p) => dal.updatePrescription(p.id as string, p.data as Record<string, unknown>),
-  deletePrescription: (p) => dal.deletePrescription(p.id as string),
+  updatePrescription: (p) => dal.updatePrescription(p.id as string, p.data as Record<string, unknown>, p.doctorId as string | undefined),
+  deletePrescription: (p) => dal.deletePrescription(p.id as string, p.doctorId as string | undefined),
   fetchSetup: () => dal.fetchSetup(),
   createSetup: (p) => dal.createSetup(p.data as Record<string, unknown>),
   updateSetup: (p) => dal.updateSetup(p.id as string, p.data as Record<string, unknown>),
@@ -86,6 +116,18 @@ export async function POST(request: NextRequest) {
         status = 401
         console.log(JSON.stringify({ reqId, method: 'POST', path: '/api/data', action, status, ms: Date.now() - start }))
         return auth
+      }
+      const { doctorId } = auth
+
+      // C6: Inject authenticated doctorId — ignore any client-supplied value.
+      // For create/update actions, force the data payload's doctor_id to the session doctor.
+      if (DATA_ACTIONS_WITH_DOCTOR_ID.has(action) && params.data && typeof params.data === 'object') {
+        (params.data as Record<string, unknown>).doctor_id = doctorId
+      }
+
+      // For list-fetch and single-record actions, force the doctorId param to the session doctor.
+      if (LIST_FETCH_DOCTOR_ACTIONS.has(action) || SINGLE_RECORD_ACTIONS.has(action)) {
+        params.doctorId = doctorId
       }
     }
 

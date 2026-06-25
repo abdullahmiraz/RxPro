@@ -141,14 +141,18 @@ export function fetchAppointments(doctorId: string) {
   `).all(doctorId) as Record<string, unknown>[])
 }
 
-export function fetchAppointment(id: string) {
+export function fetchAppointment(id: string, doctorId?: string) {
   const db = getDb()
-  return db.prepare(`
-    SELECT a.*, p.name as patient_name, p.age as patient_age, p.gender as patient_gender, p.phone as patient_phone
-    FROM rx_appointments a
-    LEFT JOIN rx_patients p ON a.patient_id = p.id
-    WHERE a.id = ?
-  `).get(id) as Record<string, unknown> | undefined
+  const sql = doctorId
+    ? `SELECT a.*, p.name as patient_name, p.age as patient_age, p.gender as patient_gender, p.phone as patient_phone
+       FROM rx_appointments a
+       LEFT JOIN rx_patients p ON a.patient_id = p.id
+       WHERE a.id = ? AND a.doctor_id = ?`
+    : `SELECT a.*, p.name as patient_name, p.age as patient_age, p.gender as patient_gender, p.phone as patient_phone
+       FROM rx_appointments a
+       LEFT JOIN rx_patients p ON a.patient_id = p.id
+       WHERE a.id = ?`
+  return (doctorId ? db.prepare(sql).get(id, doctorId) : db.prepare(sql).get(id)) as Record<string, unknown> | undefined
 }
 
 export function createAppointment(data: Record<string, unknown>) {
@@ -173,9 +177,13 @@ export function createAppointment(data: Record<string, unknown>) {
   return fetchAppointment(id)
 }
 
-export function updateAppointment(id: string, data: Record<string, unknown>) {
+export function updateAppointment(id: string, data: Record<string, unknown>, doctorId?: string) {
   const db = getDb()
   const timestamp = now()
+  if (doctorId) {
+    const owned = db.prepare('SELECT id FROM rx_appointments WHERE id = ? AND doctor_id = ?').get(id, doctorId)
+    if (!owned) return null
+  }
   const existing = db.prepare('SELECT * FROM rx_appointments WHERE id = ?').get(id) as Record<string, unknown> | undefined
   if (!existing) return null
   const merged: Record<string, unknown> = { ...existing, ...data, updated_at: timestamp }
@@ -193,12 +201,15 @@ export function updateAppointment(id: string, data: Record<string, unknown>) {
     merged.updated_at,
     id
   )
-  return fetchAppointment(id)
+  return fetchAppointment(id, doctorId)
 }
 
-export function deleteAppointment(id: string) {
+export function deleteAppointment(id: string, doctorId?: string) {
   const db = getDb()
-  db.prepare('DELETE FROM rx_appointments WHERE id = ?').run(id)
+  const sql = doctorId
+    ? 'DELETE FROM rx_appointments WHERE id = ? AND doctor_id = ?'
+    : 'DELETE FROM rx_appointments WHERE id = ?'
+  ;(doctorId ? db.prepare(sql).run(id, doctorId) : db.prepare(sql).run(id))
   return { success: true }
 }
 
@@ -213,14 +224,18 @@ export function fetchPrescriptions(doctorId: string) {
   `).all(doctorId) as Record<string, unknown>[])
 }
 
-export function fetchPrescription(id: string) {
+export function fetchPrescription(id: string, doctorId?: string) {
   const db = getDb()
-  const presc = db.prepare(`
-    SELECT pr.*, p.name as patient_name, p.age as patient_age, p.gender as patient_gender
-    FROM rx_prescriptions pr
-    LEFT JOIN rx_patients p ON pr.patient_id = p.id
-    WHERE pr.id = ?
-  `).get(id) as Record<string, unknown> | undefined
+  const sql = doctorId
+    ? `SELECT pr.*, p.name as patient_name, p.age as patient_age, p.gender as patient_gender
+       FROM rx_prescriptions pr
+       LEFT JOIN rx_patients p ON pr.patient_id = p.id
+       WHERE pr.id = ? AND pr.doctor_id = ?`
+    : `SELECT pr.*, p.name as patient_name, p.age as patient_age, p.gender as patient_gender
+       FROM rx_prescriptions pr
+       LEFT JOIN rx_patients p ON pr.patient_id = p.id
+       WHERE pr.id = ?`
+  const presc = (doctorId ? db.prepare(sql).get(id, doctorId) : db.prepare(sql).get(id)) as Record<string, unknown> | undefined
   if (!presc) return undefined
   for (const field of ['header_data', 'complaints', 'comorbidity', 'examination', 'on_examination', 'diagnosis', 'medications', 'investigation', 'on_investigation', 'advice', 'follow_up']) {
     presc[field] = parseJson(presc[field] as string)
@@ -257,9 +272,13 @@ export function createPrescription(data: Record<string, unknown>) {
   return fetchPrescription(id)
 }
 
-export function updatePrescription(id: string, data: Record<string, unknown>) {
+export function updatePrescription(id: string, data: Record<string, unknown>, doctorId?: string) {
   const db = getDb()
   const timestamp = now()
+  if (doctorId) {
+    const owned = db.prepare('SELECT id FROM rx_prescriptions WHERE id = ? AND doctor_id = ?').get(id, doctorId)
+    if (!owned) return null
+  }
   const existing = db.prepare('SELECT * FROM rx_prescriptions WHERE id = ?').get(id) as Record<string, unknown> | undefined
   if (!existing) return null
   const merged: Record<string, unknown> = { ...existing, ...data, updated_at: timestamp }
@@ -284,12 +303,15 @@ export function updatePrescription(id: string, data: Record<string, unknown>) {
     timestamp,
     id
   )
-  return fetchPrescription(id)
+  return fetchPrescription(id, doctorId)
 }
 
-export function deletePrescription(id: string) {
+export function deletePrescription(id: string, doctorId?: string) {
   const db = getDb()
-  db.prepare('DELETE FROM rx_prescriptions WHERE id = ?').run(id)
+  const sql = doctorId
+    ? 'DELETE FROM rx_prescriptions WHERE id = ? AND doctor_id = ?'
+    : 'DELETE FROM rx_prescriptions WHERE id = ?'
+  ;(doctorId ? db.prepare(sql).run(id, doctorId) : db.prepare(sql).run(id))
   return { success: true }
 }
 
