@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useId, useEffect } from "react"
+import { useState, useCallback, useId, useEffect, useMemo } from "react"
 import {
   useForm,
   useFieldArray,
@@ -30,8 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { useCreatePrescription } from "@/hooks/usePrescriptions"
-import { useFavoriteSetups } from "@/hooks/useSetup"
+import { useCreatePrescription, usePrescription } from "@/hooks/usePrescriptions"
+import { useUpdateAppointment } from "@/hooks/useAppointments"
+import { useFavoriteSetups, useFavoriteMedicines, useRouteTypes } from "@/hooks/useSetup"
 import { usePatients } from "@/hooks/usePatients"
 import { useDoctorInfo } from "@/hooks/useDoctorInfo"
 import { useSearchParams } from "next/navigation"
@@ -62,29 +63,6 @@ type ArraySectionKey = keyof Pick<
   | "onInvestigation"
   | "advice"
 >
-
-const DRUG_OPTIONS = [
-  "Amoxicillin 500mg",
-  "Azithromycin 250mg",
-  "Cetirizine 10mg",
-  "Metformin 500mg",
-  "Lisinopril 10mg",
-  "Amlodipine 5mg",
-  "Omeprazole 20mg",
-  "Paracetamol 500mg",
-  "Ibuprofen 400mg",
-  "Prednisolone 5mg",
-]
-
-const ROUTE_OPTIONS = [
-  { value: "oral", label: "Oral" },
-  { value: "iv", label: "IV" },
-  { value: "im", label: "IM" },
-  { value: "topical", label: "Topical" },
-  { value: "sublingual", label: "Sublingual" },
-  { value: "inhalation", label: "Inhalation" },
-  { value: "rectal", label: "Rectal" },
-]
 
 const FREQUENCY_OPTIONS = [
   { value: "od", label: "OD (Once Daily)" },
@@ -353,7 +331,7 @@ const arraySectionFields: Record<ArraySectionKey, ArraySectionField[]> = {
       name: "routeType",
       label: "Route",
       type: "select",
-      options: ROUTE_OPTIONS,
+      options: [],
     },
     {
       name: "frequency",
@@ -381,9 +359,11 @@ interface ArraySectionProps {
   sectionKey: ArraySectionKey
   control: Control<PrescriptionFormData>
   register: UseFormReturn<PrescriptionFormData>["register"]
+  routeOptions: { value: string; label: string }[]
+  drugOptions: string[]
 }
 
-function ArraySection({ sectionKey, control, register }: ArraySectionProps) {
+function ArraySection({ sectionKey, control, register, routeOptions, drugOptions }: ArraySectionProps) {
   const name = sectionKey as FieldArrayPath<PrescriptionFormData>
   const { fields, append, remove } = useFieldArray({ control, name })
   const fieldsConfig = arraySectionFields[sectionKey]
@@ -449,11 +429,13 @@ function ArraySection({ sectionKey, control, register }: ArraySectionProps) {
                               />
                             </SelectTrigger>
                             <SelectContent>
-                              {fieldConfig.options?.map((opt) => (
+                              {
+                              (fieldConfig.name === "routeType" ? routeOptions : fieldConfig.options)?.map((opt) => (
                                 <SelectItem key={opt.value} value={opt.value}>
                                   {opt.label}
                                 </SelectItem>
-                              ))}
+                              ))
+                              }
                             </SelectContent>
                           </Select>
                         )}
@@ -502,7 +484,7 @@ function ArraySection({ sectionKey, control, register }: ArraySectionProps) {
                           list="drug-suggestions"
                         />
                         <datalist id="drug-suggestions">
-                          {DRUG_OPTIONS.map((drug) => (
+                          {drugOptions.map((drug) => (
                             <option key={drug} value={drug} />
                           ))}
                         </datalist>
@@ -569,6 +551,31 @@ export default function PrescriptionForm({
 
   const { data: patients } = usePatients()
   const { data: doctorInfo } = useDoctorInfo("d1")
+
+  const updateAppointment = useUpdateAppointment()
+  const { data: favoriteMedicines } = useFavoriteMedicines()
+  const { data: routeTypes } = useRouteTypes()
+  const cloneId = searchParams.get("clone_id")
+  const { data: cloneData } = usePrescription(cloneId || undefined)
+
+  const drugOptions = useMemo(() => {
+    const meds = favoriteMedicines as Record<string, unknown>[] | undefined
+    if (!meds || meds.length === 0) {
+      return ["Amoxicillin 500mg", "Azithromycin 250mg", "Cetirizine 10mg", "Metformin 500mg", "Lisinopril 10mg", "Amlodipine 5mg", "Omeprazole 20mg", "Paracetamol 500mg", "Ibuprofen 400mg", "Prednisolone 5mg"]
+    }
+    return meds.map((m) => m.name as string)
+  }, [favoriteMedicines])
+
+  const routeSelectOptions = useMemo(() => {
+    const types = routeTypes as Record<string, unknown>[] | undefined
+    if (!types || types.length === 0) {
+      return [{ value: "oral", label: "Oral" }, { value: "iv", label: "IV" }, { value: "im", label: "IM" }, { value: "topical", label: "Topical" }, { value: "sublingual", label: "Sublingual" }, { value: "inhalation", label: "Inhalation" }, { value: "rectal", label: "Rectal" }]
+    }
+    return types.map((r) => ({
+      value: (r.name as string).toLowerCase(),
+      label: r.name as string,
+    }))
+  }, [routeTypes])
 
   const [patientSearch, setPatientSearch] = useState("")
   const [selectedPatient, setSelectedPatient] = useState<Record<string, unknown> | null>(null)
@@ -704,6 +711,42 @@ export default function PrescriptionForm({
     }
   }, [urlPatientId, patients, setValue])
 
+  useEffect(() => {
+    if (!cloneData) return
+    const d = cloneData as Record<string, unknown>
+    const hd = d.header_data as Record<string, string> | undefined
+    if (hd) {
+      setValue("headerData.clinicName", hd.clinicName ?? hd.clinic_name ?? "")
+      setValue("headerData.doctorName", hd.doctorName ?? hd.doctor_name ?? "")
+      setValue("headerData.address", hd.address ?? "")
+      setValue("headerData.licenseNumber", hd.licenseNumber ?? hd.license_number ?? "")
+    }
+    const setArrayField = (field: string, data: unknown) => {
+      const arr = data as Record<string, unknown>[] | undefined
+      if (arr && arr.length > 0) {
+        setValue(field as any, arr.map((item) => ({ ...item, id: generateId() })) as never)
+      }
+    }
+    setArrayField("complaints", d.complaints)
+    setArrayField("comorbidity", d.comorbidity)
+    setArrayField("examination", d.examination)
+    setArrayField("onExamination", d.on_examination)
+    setArrayField("diagnosis", d.diagnosis)
+    setArrayField("medications", d.medications)
+    setArrayField("investigation", d.investigation)
+    setArrayField("onInvestigation", d.on_investigation)
+    setArrayField("advice", d.advice)
+    const fu = d.follow_up as Record<string, string> | undefined
+    if (fu) {
+      setValue("followUp.date", fu.date ?? "")
+      setValue("followUp.notes", fu.notes ?? "")
+    }
+    if (d.patient_id) {
+      setValue("patientId", d.patient_id as string)
+    }
+    toast.success("Prescription cloned — review and save")
+  }, [cloneData, setValue])
+
   const handleFormSubmit = useCallback(
     (data: PrescriptionFormData) => {
       const doctorId = cookies.get("doctor_id") || "d1"
@@ -725,6 +768,9 @@ export default function PrescriptionForm({
       createPrescription.mutate(payload, {
         onSuccess: () => {
           toast.success("Prescription saved successfully")
+          if (urlAppointmentId) {
+            updateAppointment.mutate({ id: urlAppointmentId, data: { status: "completed" } })
+          }
           reset()
         },
         onError: (err) => {
@@ -732,7 +778,7 @@ export default function PrescriptionForm({
         },
       })
     },
-    [cookies, createPrescription, reset]
+    [cookies, createPrescription, updateAppointment, urlAppointmentId, reset]
   )
 
   const arraySectionKeys: ArraySectionKey[] = [
@@ -942,6 +988,8 @@ export default function PrescriptionForm({
             sectionKey={sectionKey}
             control={control}
             register={register}
+            routeOptions={routeSelectOptions}
+            drugOptions={drugOptions}
           />
         </CollapsibleCard>
       ))}

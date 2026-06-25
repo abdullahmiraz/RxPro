@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo, useEffect } from "react"
-import { Eye, FileText, Loader2, Search, Printer, Pencil } from "lucide-react"
+import { Eye, FileText, Loader2, Search, Printer, Pencil, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCookies } from "next-client-cookies"
 
@@ -223,6 +223,14 @@ export default function PrescriptionHistory() {
                       onClick={() => router.push(`/prescription?edit_id=${record.id}`)}
                     >
                       <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label="Clone prescription"
+                      onClick={() => router.push(`/prescription?clone_id=${record.id}`)}
+                    >
+                      <Copy className="size-4" />
                     </Button>
                   </div>
                 </TableCell>

@@ -14,8 +14,10 @@ import {
   X,
   Loader2,
   Users,
+  FileText,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from "@/hooks/usePatients"
 import PageHeader from "@/components/shared/page-header/PageHeader"
@@ -100,6 +102,7 @@ function getAgeDisplay(p: Patient): string {
 }
 
 export default function PatientInfoPage() {
+  const router = useRouter()
   const { data: patients, isLoading } = usePatients()
   const createMutation = useCreatePatient()
   const updateMutation = useUpdatePatient()
@@ -322,6 +325,17 @@ export default function PatientInfoPage() {
                               }}
                             >
                               <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push(`/prescription?patient_id=${p.id}`)
+                              }}
+                              aria-label={`Create prescription for ${p.name}`}
+                            >
+                              <FileText className="size-4" />
                             </Button>
                           </div>
                         </TableCell>
