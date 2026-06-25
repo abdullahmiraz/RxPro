@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { Eye, FileText, Loader2 } from "lucide-react"
+import { useState, useCallback, useMemo, useEffect } from "react"
+import { Eye, FileText, Loader2, Search } from "lucide-react"
 import { useCookies } from "next-client-cookies"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -22,6 +23,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { usePrescriptions } from "@/hooks/usePrescriptions"
 
 interface PrescriptionRecord {
@@ -42,6 +51,30 @@ export default function PrescriptionHistory() {
   const doctorId = cookies.get("doctor_id")
   const { data, isLoading, error } = usePrescriptions(doctorId)
   const [selected, setSelected] = useState<PrescriptionRecord | null>(null)
+  const [search, setSearch] = useState("")
+
+  const records: PrescriptionRecord[] = Array.isArray(data)
+    ? (data as unknown as PrescriptionRecord[])
+    : []
+
+  const filteredRecords = useMemo(
+    () =>
+      search
+        ? records.filter((r) =>
+            (r.patient_name ?? "")
+              .toLowerCase()
+              .includes(search.toLowerCase())
+          )
+        : records,
+    [records, search]
+  )
+
+  const [page, setPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.ceil(filteredRecords.length / pageSize)
+  const paginatedRecords = filteredRecords.slice((page - 1) * pageSize, page * pageSize)
+
+  useEffect(() => setPage(1), [search])
 
   const handleView = useCallback((record: PrescriptionRecord) => {
     setSelected(record)
@@ -50,10 +83,6 @@ export default function PrescriptionHistory() {
   const handleClose = useCallback(() => {
     setSelected(null)
   }, [])
-
-  const records: PrescriptionRecord[] = Array.isArray(data)
-    ? (data as unknown as PrescriptionRecord[])
-    : []
 
   if (isLoading) {
     return (
@@ -105,6 +134,16 @@ export default function PrescriptionHistory() {
   return (
     <Card>
       <CardContent className="pt-4">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Search by patient name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search prescriptions"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -116,7 +155,7 @@ export default function PrescriptionHistory() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {records.map((record) => (
+            {paginatedRecords.map((record) => (
               <TableRow key={record.id}>
                 <TableCell>
                   {record.created_at
@@ -150,6 +189,36 @@ export default function PrescriptionHistory() {
             ))}
           </TableBody>
         </Table>
+
+          {totalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      isActive={p === page}
+                      onClick={() => setPage(p)}
+                      className="cursor-pointer"
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className={page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
       </CardContent>
 
       <Dialog

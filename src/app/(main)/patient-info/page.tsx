@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -47,6 +47,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const
 
@@ -125,6 +133,13 @@ export default function PatientInfoPage() {
       ),
     [patientList, search]
   )
+
+  const [page, setPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.ceil(filtered.length / pageSize)
+  const paginatedPatients = filtered.slice((page - 1) * pageSize, page * pageSize)
+
+  useEffect(() => setPage(1), [search])
 
   function getPatientWithExtras(p: Patient): Patient {
     return {
@@ -243,7 +258,7 @@ export default function PatientInfoPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((patient) => {
+                {paginatedPatients.map((patient) => {
                   const p = getPatientWithExtras(patient)
                   return (
                     <>
@@ -388,6 +403,36 @@ export default function PatientInfoPage() {
                 })}
               </TableBody>
             </Table>
+          )}
+
+          {totalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      isActive={p === page}
+                      onClick={() => setPage(p)}
+                      className="cursor-pointer"
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className={page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           )}
         </CardContent>
       </Card>

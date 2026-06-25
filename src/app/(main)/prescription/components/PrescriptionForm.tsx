@@ -14,6 +14,8 @@ import {
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { ChevronDown, Plus, Trash2, Printer, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import { useCookies } from "next-client-cookies"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { useCreatePrescription } from "@/hooks/usePrescriptions"
+import { useFavoriteSetups } from "@/hooks/useSetup"
 import type { PrescriptionFormData } from "../types"
 
 interface SectionState {
@@ -535,6 +539,10 @@ interface PrescriptionFormProps {
 export default function PrescriptionForm({
   onPrint,
 }: PrescriptionFormProps) {
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
+
+  const { data: favoriteSetups, isLoading: isLoadingTemplates } = useFavoriteSetups()
+
   const [sections, setSections] = useState<SectionState>({
     complaints: true,
     comorbidity: false,
@@ -550,11 +558,16 @@ export default function PrescriptionForm({
 
   const resolver = yupResolver(schema) as unknown as Resolver<PrescriptionFormData>
 
+  const cookies = useCookies()
+  const createPrescription = useCreatePrescription()
+
   const {
     register,
     handleSubmit,
     watch,
     control,
+    reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<PrescriptionFormData>({
     resolver,
@@ -569,11 +582,119 @@ export default function PrescriptionForm({
     }))
   }, [])
 
+  const handleLoadTemplate = useCallback(() => {
+    if (!selectedTemplateId) return
+    const template = (favoriteSetups as Record<string, unknown>[] | undefined)?.find(
+      (f) => f.id === selectedTemplateId
+    )
+    if (!template) return
+
+    let parsedData: Record<string, string[]> = {}
+    try {
+      parsedData =
+        typeof template.data === "string"
+          ? JSON.parse(template.data)
+          : (template.data as Record<string, string[]>)
+    } catch {
+      toast.error("Invalid template data")
+      return
+    }
+
+    if (parsedData.complaints?.length) {
+      setValue(
+        "complaints",
+        parsedData.complaints.map((item: string) => ({
+          id: generateId(),
+          complaint: item,
+          duration: "",
+        }))
+      )
+    }
+    if (parsedData.examination?.length) {
+      setValue(
+        "examination",
+        parsedData.examination.map((item: string) => ({
+          id: generateId(),
+          finding: item,
+          result: "",
+        }))
+      )
+    }
+    if (parsedData.investigation?.length) {
+      setValue(
+        "investigation",
+        parsedData.investigation.map((item: string) => ({
+          id: generateId(),
+          testName: item,
+          notes: "",
+        }))
+      )
+    }
+    if (parsedData.diagnosis?.length) {
+      setValue(
+        "diagnosis",
+        parsedData.diagnosis.map((item: string) => ({
+          id: generateId(),
+          diagnosis: item,
+        }))
+      )
+    }
+    if (parsedData.advice?.length) {
+      setValue(
+        "advice",
+        parsedData.advice.map((item: string) => ({
+          id: generateId(),
+          advice: item,
+        }))
+      )
+    }
+    if (parsedData.medications?.length) {
+      setValue(
+        "medications",
+        parsedData.medications.map((item: string) => ({
+          id: generateId(),
+          drugName: item,
+          dosage: "",
+          duration: "",
+          instructions: "",
+          routeType: "",
+          frequency: "",
+        }))
+      )
+    }
+
+    toast.success("Template loaded")
+  }, [selectedTemplateId, favoriteSetups, setValue])
+
   const handleFormSubmit = useCallback(
     (data: PrescriptionFormData) => {
-      onPrint?.(data)
+      const doctorId = cookies.get("doctor_id") || "d1"
+      const payload = {
+        patient_id: data.patientId,
+        doctor_id: doctorId,
+        header_data: data.headerData,
+        complaints: data.complaints,
+        comorbidity: data.comorbidity,
+        examination: data.examination,
+        on_examination: data.onExamination,
+        diagnosis: data.diagnosis,
+        medications: data.medications,
+        investigation: data.investigation,
+        on_investigation: data.onInvestigation,
+        advice: data.advice,
+        follow_up: data.followUp,
+      } satisfies Record<string, unknown>
+      createPrescription.mutate(payload, {
+        onSuccess: () => {
+          toast.success("Prescription saved successfully")
+          reset()
+        },
+        onError: (err) => {
+          toast.error(err.message || "Failed to save prescription")
+        },
+      })
     },
-    [onPrint]
+    [cookies, createPrescription, reset]
   )
 
   const arraySectionKeys: ArraySectionKey[] = [
@@ -679,6 +800,47 @@ export default function PrescriptionForm({
               </p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Load Template */}
+      <Card>
+        <CardHeader className="border-b">
+          <span className="text-sm font-medium">Load Template</span>
+        </CardHeader>
+        <CardContent>
+          {isLoadingTemplates ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : !favoriteSetups || (favoriteSetups as Record<string, unknown>[]).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No templates available</p>
+          ) : (
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label htmlFor="template-select">Favorite Setup</Label>
+                <Select value={selectedTemplateId} onValueChange={(val) => setSelectedTemplateId(val ?? "")}>
+                  <SelectTrigger id="template-select" aria-label="Select a favorite setup">
+                    <SelectValue placeholder="Select a favorite setup" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(favoriteSetups as Record<string, unknown>[]).map((setup) => (
+                      <SelectItem key={setup.id as string} value={setup.id as string}>
+                        {setup.name as string}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleLoadTemplate}
+                disabled={!selectedTemplateId}
+                aria-label="Apply template"
+              >
+                Apply Template
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

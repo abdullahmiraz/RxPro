@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { useCookies } from "next-client-cookies"
-import { Plus, Pencil, Trash2, Loader2, Calendar } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Plus, Pencil, Trash2, Loader2, Calendar, FileText } from "lucide-react"
 
 import {
   useAppointments,
@@ -43,6 +44,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 const appointmentSchema = yup.object({
   patientName: yup.string().required("Patient name is required"),
@@ -78,6 +87,7 @@ const statusColors: Record<string, "default" | "secondary" | "outline"> = {
 }
 
 export default function AppointmentsPage() {
+  const router = useRouter()
   const cookies = useCookies()
   const doctorId = cookies.get("doctor_id")
   const { data: appointments, isLoading } = useAppointments(doctorId ?? undefined)
@@ -109,6 +119,13 @@ export default function AppointmentsPage() {
         : appointmentList,
     [appointmentList, dateFilter]
   )
+
+  const [page, setPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.ceil(filtered.length / pageSize)
+  const paginatedAppointments = filtered.slice((page - 1) * pageSize, page * pageSize)
+
+  useEffect(() => setPage(1), [dateFilter])
 
   function openAdd() {
     setEditingAppt(null)
@@ -201,7 +218,7 @@ export default function AppointmentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((appt) => (
+                {paginatedAppointments.map((appt) => (
                   <TableRow key={appt.id}>
                     <TableCell className="font-medium">{appt.patientName}</TableCell>
                     <TableCell>{appt.date}</TableCell>
@@ -226,6 +243,14 @@ export default function AppointmentsPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
+                          aria-label={`Create prescription for ${appt.patientName}`}
+                          onClick={() => router.push(`/prescription?appointment_id=${appt.id}&patient_id=${(appt as any).patient_id ?? ""}`)}
+                        >
+                          <FileText className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
                           onClick={() => deleteAppointment(appt.id)}
                         >
                           <Trash2 className="size-4 text-destructive" />
@@ -236,6 +261,36 @@ export default function AppointmentsPage() {
                 ))}
               </TableBody>
             </Table>
+          )}
+
+          {totalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      isActive={p === page}
+                      onClick={() => setPage(p)}
+                      className="cursor-pointer"
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className={page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           )}
         </CardContent>
       </Card>
