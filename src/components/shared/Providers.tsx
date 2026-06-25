@@ -7,7 +7,18 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from 'sonner'
 
 export function Providers({ children, cookies: cookieRecords = [] }: { children: ReactNode; cookies?: { name: string; value: string }[] }) {
-  const [queryClient] = useState(() => new QueryClient())
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 30_000,
+        retry: 1,
+        refetchOnWindowFocus: false,
+      },
+      mutations: {
+        retry: 0,
+      },
+    },
+  }))
 
   return (
     <CookiesProvider value={cookieRecords}>

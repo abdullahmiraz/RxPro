@@ -201,12 +201,28 @@ RxPro is feature-complete but has **critical security vulnerabilities** that mus
 
 ---
 
-## Top 5 Priority Fixes
+## ✅ Completed Fixes
 
-```
-1.  Add auth check to API route.ts                         [C4 — 10 min fix, secures all data]
-2.  Move cookie setting to server-side (next/headers)      [C5 — 15 min fix, httpOnly + sameSite]
-3.  Hash passwords with bcrypt                             [C2 — 30 min fix, protects credentials]
-4.  Sign tokens with HMAC/JWT                              [C3 — 30 min fix, prevents forgery]
-5.  Move CSP to proxy.ts with nonces                       [H9b — 20 min fix, removes unsafe-inline]
-```
+All pushed to `master` on 2026-06-25:
+
+| Fix | What changed | Status |
+|-----|-------------|--------|
+| **C4** | Auth check on `/api/data` — HMAC-verified token required on every request | ✅ |
+| **C5** | Server-side `/api/login` — httpOnly + secure + sameSite cookies via `next/headers` | ✅ |
+| **C2** | Passwords hashed with bcryptjs (12 rounds) in seed data + DAL comparison | ✅ |
+| **C3** | Tokens signed with HMAC-SHA256 + `crypto.timingSafeEqual` verification | ✅ |
+| **H9b** | CSP moved to `proxy.ts` with per-request nonces, `strict-dynamic`, no `unsafe-inline` | ✅ |
+| **Model** | Deep agents switched from GLM-5.1 → Kimi K2.6 (cheaper) | ✅ |
+
+**Note:** After C2, delete `data/rxpro.db` so seed data re-runs with hashed passwords.
+
+## 🎯 Next Priority Fixes
+
+| # | Issue | Effort | Impact |
+|---|-------|--------|--------|
+| H12 | Health check endpoint (`/api/health`) | 5 min | Ops readiness |
+| H9 | Allergies not persisted (data loss bug) | 15 min | Patient safety |
+| H5 | Sanitize error messages in route.ts | 5 min | Info leak |
+| H1 | Add doctor_id to patient CRUD | 30 min | Data isolation |
+| H3 | Rate limiting on login | 20 min | Brute force |
+| M10 | QueryClient defaults (staleTime, retry) | 5 min | Performance |
