@@ -2,6 +2,7 @@
 **Last Updated:** 2026-06-25
 
 ## Completed
+- [x] **Bug fix 2026-06-25:** Patient Info expand crash — `fetchPatients()` missing `parseJson()` for allergies field
 - [x] Project scaffold with Next.js 16 + shadcn/ui 4.11 + Tailwind v4
 - [x] 21 shadcn/ui components installed (base-nova style, @base-ui/react)
 - [x] Core dependencies installed (tanstack-query, react-hook-form, yup, react-table, lucide-react, better-sqlite3)

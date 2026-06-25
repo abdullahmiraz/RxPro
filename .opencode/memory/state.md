@@ -1,5 +1,5 @@
 # RxPro - Project State Snapshot
-**Last Updated:** 2026-06-25
+**Last Updated:** 2026-06-25 (afternoon session)
 
 ## Build Status
 - tsc --noEmit: ✅ PASSES (0 errors)
@@ -45,6 +45,9 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 - [x] Appointments page (API-connected, date filter, auto-updates to completed)
 - [x] Prescription module (12-section form, patient search, template loading, URL params, clone/edit, history with print/print)
 - [x] All gaps resolved (Phase 1+2+3): 20 gaps from user journey audit
+
+## Bug Fixes
+- **2026-06-25:** Patient Info page expand chevron → blank page. `fetchPatients()` returned `allergies` as raw JSON string; expandable detail row called `.map()` on it. Added `parseJson()` in `fetchPatients()` (was already in `fetchPatient()`). Root cause: DAL inconsistency between list and single-get.
 
 ## Future Enhancements (Low Priority)
 1. Guided first-time setup wizard
