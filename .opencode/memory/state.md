@@ -1,5 +1,5 @@
 # RxPro - Project State Snapshot
-**Last Updated:** 2026-06-25 (session 4: user-journey rewrite + agent updates + practical flow testing)
+**Last Updated:** 2026-06-25 (session 5: C6+H2+H4 security hardening + backup auth + Queen Metis supervision)
 
 ## 👑 Kingdom Status
 - **Linked to:** OpenCode Kingdom v1.1.0 (Palace & Territories)
@@ -11,7 +11,14 @@
 
 ## Build Status
 - tsc --noEmit: ✅ PASSES (0 errors)
-- npm run build: ✅ PASSES (3.5s compile, 0 errors)
+- npm run build: ✅ PASSES (0 errors, 16 routes, Proxy registered)
+
+## Security Hardening Complete (C6+H2+H4+Backup)
+- C6: doctor_id always sourced from authenticated session cookie — route.ts overrides client body
+- H2: DAL ownership checks on all single-record operations (appointments, prescriptions patients)
+- H4: Origin/Referer CSRF protection on /api/data via ALLOWED_ORIGIN env var
+- Backup: /api/backup secured with HMAC auth + origin check
+- 34 of 44 audit findings resolved; remaining L4-L12 low-priority polish
 
 ## File Count
 - **Pages:** 11 (login, dashboard, setup, favorite-setup, favorite-medicine, instruction, doctor-info, patient-info, appointments, prescription, not-found)
@@ -25,11 +32,15 @@
 - **Plugin config:** oh-my-openagent + 3 @capybearista plugins
 
 ## Auth
-- Login creds: admin / password
+- Login creds: admin / password (bcrypt-hashed, 12 rounds)
 - Doctor ID: d1 (seeded in SQLite)
 - Security word: password
-- Middleware validates base64 token with doctor_id match
-- Storage: cookies (doctor_id, rx-token)
+- Login: POST /api/login (server-side) sets httpOnly+secure+SameSite cookies via next/headers
+- API: HMAC-SHA256 signed tokens verified via crypto.timingSafeEqual
+- Session enforcement: route.ts reads doctor_id from cookie token, overrides client body
+- Rate limiting: 10 attempts/IP/60s sliding window on login
+- CSRF: Origin/Referer validation on /api/data + /api/backup
+- All single-record DAL operations verify doctor_id ownership
 
 ## Data Storage
 - **Engine:** better-sqlite3 (local SQLite)
@@ -62,6 +73,7 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 - **2026-06-25 (session 2):** Patient Info page missing `key` prop on `<></>` fragment in `TableBody` — fixed by using `<Fragment key={p.id}>`.
 - **2026-06-25 (session 3):** Dashboard: Replaced hardcoded `recentActivity` with real data from appointments API; added "Upcoming Appointments" card with 5 scheduled appointments + "Create Rx" links. Stat card "Last 7 Days" → "Total Prescriptions".
 - **2026-06-25 (session 4):** Rewrote `docs/user-journey.md` with 10 practical daily flows (not theoretical scenarios). Updated `RxPro-context.md` and `rxpro-manager.md` agents. Verified all flows with Playwright: dashboard live data, patient search+select, history empty state. Zero console errors.
+- **2026-06-25 (session 5):** C6+H2+H4 security hardening. Route.ts now injects authenticated doctorId into all DAL calls (C6). Added doctor_id ownership checks to appointments & prescriptions DAL ops (H2). Added Origin/Referer CSRF protection (H4). Secured `/api/backup` with HMAC auth + origin check (Metis finding). All verified with 2 deep agents + Queen Metis supervision. 34/44 audit findings resolved.
 
 ## Future Enhancements (Low Priority)
 1. Guided first-time setup wizard

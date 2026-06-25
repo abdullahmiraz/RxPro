@@ -351,6 +351,7 @@ export default function InstructionPage() {
             </div>
           ) : (
             <div className="rounded-lg border">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -388,6 +389,7 @@ export default function InstructionPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           )}
         </TabsContent>
@@ -413,6 +415,7 @@ export default function InstructionPage() {
             </div>
           ) : (
             <div className="rounded-lg border">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -450,6 +453,7 @@ export default function InstructionPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           )}
         </TabsContent>

@@ -237,6 +237,7 @@ export default function FavoriteSetupPage() {
         </div>
       ) : (
         <div className="rounded-lg border">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -276,6 +277,7 @@ export default function FavoriteSetupPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
 

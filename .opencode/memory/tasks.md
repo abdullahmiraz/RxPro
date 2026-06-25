@@ -1,5 +1,5 @@
 # RxPro - Task Tracker
-**Last Updated:** 2026-06-25
+**Last Updated:** 2026-06-25 (session 5: C6+H2+H4+backup auth)
 
 ## Completed
 - [x] **Bug fix 2026-06-25:** Patient Info expand crash — `fetchPatients()` missing `parseJson()` for allergies field
@@ -12,6 +12,11 @@
 - [x] **2026-06-25 (session 4):** Updated RxPro-context.md with current architecture (SQLite, proxy.ts, Rubik, etc.)
 - [x] **2026-06-25 (session 4):** Updated rxpro-manager.md with Playwright testing protocol + kingdom v1.1.0
 - [x] **2026-06-25 (session 4):** Playwright-verified all practical flows: dashboard, patient search/select, history, console errors
+- [x] **2026-06-25 (session 5):** C6 — doctor_id sourced from session cookie, not client body (route.ts overrides params.data.doctor_id)
+- [x] **2026-06-25 (session 5):** H2 — DAL ownership checks on fetchAppointment, fetchPrescription, update*, delete* (appointments + prescriptions)
+- [x] **2026-06-25 (session 5):** H4 — Origin/Referer CSRF check on /api/data (ALLOWED_ORIGIN env var, 403 on mismatch)
+- [x] **2026-06-25 (session 5):** Backup — /api/backup secured with HMAC auth + origin check (Metis finding)
+- [x] **2026-06-25 (session 5):** Queen Metis supervision — identified backup auth gap, coherence check on all 3 layers
 - [x] Project scaffold with Next.js 16 + shadcn/ui 4.11 + Tailwind v4
 - [x] 21 shadcn/ui components installed (base-nova style, @base-ui/react)
 - [x] Core dependencies installed (tanstack-query, react-hook-form, yup, react-table, lucide-react, better-sqlite3)

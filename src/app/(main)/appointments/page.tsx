@@ -247,6 +247,7 @@ export default function AppointmentsPage() {
               </p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -302,6 +303,7 @@ export default function AppointmentsPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
 
           {totalPages > 1 && (

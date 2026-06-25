@@ -208,6 +208,7 @@ export default function FavoriteMedicinePage() {
         </div>
       ) : (
         <div className="rounded-lg border">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -251,6 +252,7 @@ export default function FavoriteMedicinePage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
 

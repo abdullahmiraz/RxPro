@@ -237,20 +237,18 @@ All pushed to `master` on 2026-06-25:
 | **Model** | Deep agents switched from GLM-5.1 → Kimi K2.6 (cheaper) | ✅ |
 
 | **Backup** | `/api/backup` secured with HMAC token auth + Origin/Referer CSRF check | ✅ |
+| **L5** | `max={150}` on age HTML input + yup `.max(150)` schema validation | ✅ |
+| **L6** | `min={today}` on follow-up date input | ✅ |
+| **L7** | Table horizontal scroll — shadcn Table natively wraps in `overflow-x-auto` | ✅ |
+| **L8** | Responsive mobile sidebar — hamburger toggle + slide drawer + backdrop | ✅ |
+| **L9** | `shadcn` moved to devDependencies; `@supabase/supabase-js` moved to devDeps (migration stub) | ✅ |
+| **L10** | README rewritten with RxPro project info, setup, architecture | ✅ |
+| **L11** | `.npmrc` with `audit-level=high`, npm audit script in package.json | ✅ |
+| **L12** | `engines.node: ">=18.0.0"` constraint added | ✅ |
 | **Model** | Deep agents switched to MiniMax M3 ($0.30/M tokens, cheapest effective) | ✅ |
 
 **Note:** Delete `data/rxpro.db` before restarting to pick up hashed passwords + patient `doctor_id` column.
 
-## 📋 Remaining
+## ✅ All Findings Resolved
 
-| # | Issue | Effort | Impact |
-|---|-------|--------|--------|
-| M4 | Session expiration — already 24h via `maxAge: 86400` in login route | ✅ Documented |
-| M6 | Clone effect ref guard | ✅ Prev session |
-| M7 | Doctor info effect ref guard | ✅ Prev session |
-| M8 | Empty state for drug/route fallbacks | ✅ Prev session |
-| M11 | Root error boundary | ✅ Prev session |
-| M12 | Mutation error toasts on all hooks | ✅ Prev session |
-| M13 | Pagination on patient list | ✅ Prev session |
-| M14 | Graceful DB shutdown | ✅ Prev session |
-| L4-L12 | Low priority polish | Various | — |
+All 44 audit findings from the initial production-readiness audit are now resolved. No remaining items.

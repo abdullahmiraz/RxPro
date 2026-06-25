@@ -223,6 +223,7 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -247,6 +248,7 @@ export default function Dashboard() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -1032,6 +1032,7 @@ export default function PrescriptionForm({
             <Input
               id="followUp.date"
               type="date"
+              min={new Date().toISOString().split("T")[0]}
               {...register("followUp.date")}
               aria-label="Follow up date"
             />

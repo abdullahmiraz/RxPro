@@ -63,7 +63,7 @@ const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const
 
 const patientSchema = yup.object({
   name: yup.string().required("Name is required"),
-  age: yup.number().typeError("Must be a number").positive().integer().nullable(),
+  age: yup.number().typeError("Must be a number").positive().integer().max(150, "Max age is 150").nullable(),
   gender: yup.string().oneOf(["Male", "Female", "Other"]).nullable(),
   phone: yup.string().nullable(),
   email: yup.string().email("Invalid email").nullable(),
@@ -264,6 +264,7 @@ export default function PatientInfoPage() {
               </p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -432,6 +433,7 @@ export default function PatientInfoPage() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
 
           {totalPages > 1 && (
@@ -482,7 +484,7 @@ export default function PatientInfoPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="age">Age</Label>
-                <Input id="age" type="number" {...register("age")} />
+                <Input id="age" type="number" max={150} {...register("age")} />
                 {errors.age && <p className="text-xs text-destructive">{errors.age.message}</p>}
               </div>
 

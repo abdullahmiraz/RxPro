@@ -176,6 +176,7 @@ export default function SetupPage() {
         </div>
       ) : (
         <div className="rounded-lg border">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -217,6 +218,7 @@ export default function SetupPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
 

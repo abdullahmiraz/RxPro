@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RxPro
+
+Prescription management system for clinics. Doctors manage patients, appointments, and 12-section prescriptions with a print-ready layout.
+
+## Tech Stack
+
+- Next.js 16 (App Router) with TypeScript
+- Tailwind CSS v4 and shadcn/ui v4 (base-nova, `@base-ui/react`)
+- TanStack Query for data fetching
+- react-hook-form + yup for forms
+- better-sqlite3 for local storage (swappable for Supabase)
+- next-client-cookies for authentication
+
+## Prerequisites
+
+- Node.js 22+ (engines field requires `>=18.0.0`)
+- npm
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. The root path redirects to `/login` if unauthenticated. Sign in with `admin` / `password`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command            | Description                    |
+| ------------------ | ------------------------------ |
+| `npm run dev`      | Start the dev server           |
+| `npm run build`    | Production build               |
+| `npm run start`    | Run the production build       |
+| `npm run lint`     | Run ESLint                     |
+| `npm run audit`    | Run npm audit (high severity)  |
+| `npx tsc --noEmit` | TypeScript type check          |
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The data flow is `Client Component` to `src/api/api.ts` (POST `/api/data`), dispatched by `src/app/api/data/route.ts` to `src/lib/dal.ts` (server-side CRUD), backed by `src/lib/database.ts` (better-sqlite3 with auto-init and seed data). Swapping the SQLite backend for Supabase is a change to `dal.ts` and `api.ts` only; pages and hooks stay identical.

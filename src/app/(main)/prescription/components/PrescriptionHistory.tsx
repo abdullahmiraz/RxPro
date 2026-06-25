@@ -175,6 +175,7 @@ export default function PrescriptionHistory() {
             aria-label="Search prescriptions"
           />
         </div>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -238,6 +239,7 @@ export default function PrescriptionHistory() {
             ))}
           </TableBody>
         </Table>
+        </div>
 
           {totalPages > 1 && (
             <Pagination className="mt-4">
