@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import * as dal from '@/lib/dal'
-import { signToken } from '@/lib/auth'
+import { signToken, checkRateLimit } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown'
+  const rateCheck = checkRateLimit(`login:${ip}`)
+  if (!rateCheck.allowed) {
+    return NextResponse.json({
+      error: 'Too many attempts. Try again later.',
+      retryAfter: Math.ceil(rateCheck.resetIn / 1000),
+    }, { status: 429 })
+  }
+
   try {
     const body = await request.json()
     const { name, securityWord } = body as { name?: string; securityWord?: string }
