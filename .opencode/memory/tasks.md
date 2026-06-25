@@ -7,6 +7,11 @@
 - [x] **2026-06-25 (session 2):** Fixed hardcoded `"d1"` in PrescriptionForm — now reads from `doctor_id` cookie
 - [x] **2026-06-25 (session 2):** Migrated `middleware.ts` → `proxy.ts` (Next.js 16 deprecation)
 - [x] **2026-06-25 (session 2):** Fixed missing `key` prop on fragment in PatientInfo page TableBody
+- [x] **2026-06-25 (session 3):** Dashboard upgrades — Upcoming Appointments card, real recent activity, Total Prescriptions stat
+- [x] **2026-06-25 (session 4):** Rewrote docs/user-journey.md with 10 practical daily flows, removed dummy/outdated scenarios
+- [x] **2026-06-25 (session 4):** Updated RxPro-context.md with current architecture (SQLite, proxy.ts, Rubik, etc.)
+- [x] **2026-06-25 (session 4):** Updated rxpro-manager.md with Playwright testing protocol + kingdom v1.1.0
+- [x] **2026-06-25 (session 4):** Playwright-verified all practical flows: dashboard, patient search/select, history, console errors
 - [x] Project scaffold with Next.js 16 + shadcn/ui 4.11 + Tailwind v4
 - [x] 21 shadcn/ui components installed (base-nova style, @base-ui/react)
 - [x] Core dependencies installed (tanstack-query, react-hook-form, yup, react-table, lucide-react, better-sqlite3)

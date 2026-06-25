@@ -4,123 +4,117 @@
 - **Framework:** Next.js 16.2.9 (App Router)
 - **Language:** TypeScript (strict)
 - **UI:** Tailwind CSS v4.3 + shadcn/ui v4.11 (base-nova style, `@base-ui/react`)
-- **State:** TanStack Query
-- **Backend:** Supabase
-- **Forms:** react-hook-form + yup
-- **Tables:** @tanstack/react-table
-- **Auth:** Custom cookie-based (next-client-cookies)
-- **Build:** npm, PostCSS with @tailwindcss/postcss
-- **Font:** Geist via next/font/google (default)
+- **State:** TanStack Query v5
+- **Database:** better-sqlite3 (local SQLite, file at `data/rxpro.db`)
+- **Forms:** react-hook-form + yup (yupResolver)
+- **Font:** Rubik via next/font/google
+- **Icons:** lucide-react
+- **Auth:** Custom cookie-based via next-client-cookies (doctor_id + base64 rx-token)
+- **Proxy validation:** `src/proxy.ts` (renamed from middleware.ts for Next.js 16)
 
-## Project Structure
+## Architecture
+
 ```
-src/
-  app/
-    (main)/                # Authenticated route group
-      dashboard/
-      setup/
-      favorite-setup/
-      favorite-medicine/
-      instruction/
-      doctor-info/
-      patient-info/
-      appointments/
-      prescription/
-      layout.tsx           # Sidebar + content shell
-      loading.tsx          # Route-level skeleton
-      error.tsx            # Error boundary with retry
-    login/
-      page.tsx
-    layout.tsx             # Root layout (providers, fonts)
-    page.tsx               # Root redirect
-    not-found.tsx          # Custom 404
-    globals.css            # Tailwind v4 + shadcn
-  components/
-    ui/                    # shadcn/ui components (21 installed)
-    shared/                # Sidebar, PageHeader
-    main/dashboard/        # Dashboard component
-    login/                 # Login component
-  lib/
-    utils.ts               # cn() helper
-    supabase.ts            # Supabase client
-    database.types.ts      # DB types
-  api/
-    api.ts                 # Supabase queries
-  hooks/                   # Custom hooks
-  types/                   # Shared types
+Client Component → src/api/api.ts (POST /api/data {action, ...params})
+  → src/app/api/data/route.ts (dispatcher, 44 actions)
+    → src/lib/dal.ts (44 typed CRUD functions)
+      → src/lib/database.ts (better-sqlite3, 10 tables, seed data)
 ```
 
-## Component Conventions
-- All shadcn components use `@base-ui/react` (not Radix)
-- Import via `@/components/ui/button`
-- Use `cn()` from `@/lib/utils` for class merging
-- CSS variables in OKLCH color space
-- Tailwind v4 uses `@theme inline` and `@custom-variant`
+## Routes (all auth-protected via proxy.ts)
 
-## Routes
-| Route | Description | Page Title |
-|-------|-------------|------------|
-| `/` | Redirect to `/dashboard` or `/login` | - |
-| `/login` | Doctor login form | Login |
-| `/dashboard` | Stats, chart, recent activity | Dashboard |
-| `/setup` | CRUD base configurations | Setup |
-| `/favorite-setup` | CRUD favorite setups | Favorite Setup |
-| `/favorite-medicine` | CRUD favorite medicines | Favorite Medicine |
-| `/instruction` | CRUD instructions + route types | Instruction |
-| `/doctor-info` | Doctor profile editor | Doctor Info |
-| `/patient-info` | CRUD patient records | Patient Info |
-| `/appointments` | Schedule appointments | Appointments |
-| `/prescription` | Create/view prescriptions | Prescription |
+| Route | Component | Auth |
+|-------|-----------|------|
+| `/` | Server redirect (cookie check → /dashboard or /login) | No |
+| `/login` | `<Login />` (gradient bg, centered card, admin/password) | No |
+| `/dashboard` | 4 stat cards, upcoming appointments, weekly chart, recent activity (live data) | Yes |
+| `/setup` | CRUD base configurations | Yes |
+| `/favorite-setup` | CRUD favorite setups | Yes |
+| `/favorite-medicine` | CRUD favorite medicines | Yes |
+| `/instruction` | Tabbed: Instructions + Route Types | Yes |
+| `/doctor-info` | Doctor profile editor with header/footer templates | Yes |
+| `/patient-info` | Searchable table, expandable details, allergies | Yes |
+| `/appointments` | Date filter, status badges (Scheduled/Completed/Cancelled) | Yes |
+| `/prescription` | 12-section collapsible form, patient search, template loading, clone, history, print | Yes |
+
+## Data Layer
+
+- **`src/lib/database.ts`** — SQLite init, 10 tables (rx_doctors, rx_doctor_info, rx_patients, rx_appointments, rx_prescriptions, rx_setups, rx_favorite_setups, rx_favorite_medicines, rx_instructions, rx_route_types), auto-creates + seeds on first access
+- **`src/lib/dal.ts`** — 44 typed CRUD functions for all resources
+- **`src/app/api/data/route.ts`** — POST endpoint dispatching to DAL by action name
+- **`src/api/api.ts`** — Client-side functions (same signatures as if using Supabase)
+- **`src/hooks/`** — 5 TanStack Query hook files: usePatients, useAppointments, usePrescriptions, useSetup, useDoctorInfo
+
+## Key Files
+
+- `src/lib/database.ts` — SQLite schema + seed data
+- `src/lib/dal.ts` — 44 CRUD functions
+- `src/app/api/data/route.ts` — POST dispatcher
+- `src/api/api.ts` — client-side API
+- `src/hooks/` — TanStack Query hooks
+- `src/proxy.ts` — auth proxy (replaces middleware.ts)
+- `src/app/(main)/` — all authenticated pages
+- `src/components/main/dashboard/Dashboard.tsx`
+- `src/app/(main)/prescription/components/` — PrescriptionForm.tsx, PrescriptionHistory.tsx, PrintPrescription.tsx
 
 ## Auth
-- Custom cookie-based (no Supabase Auth)
-- `rx_doctors` table with plain-text `security_word`
-- Login stores `doctor_id` + base64 `rx-token` cookie
-- Middleware validates token decodes to match doctor_id
+
+- Login: admin / password (rx_doctors table, security_word field)
+- Cookies: doctor_id + rx-token (base64 encoded JSON)
+- Proxy validates token decodes to matching doctor_id
 - Protected routes: all except `/` and `/login`
+- Doctor ID in SQLite seed: `d1`
 
 ## Design Tokens
-- Sidebar: slate-900 bg (dark)
-- Content bg: `--background` (light)
-- Primary: blue-600 (#2563eb)
-- Font: Geist via next/font/google
-- Cards: white with border
 
-## Server Actions for mutations (Next.js 16 style)
-- Use `"use server"` in action files
-- Use `useActionState` for form handling in client components
-- Revalidate paths after mutations
+- Primary: blue-600 (#2563eb / oklch(0.55 0.2 250))
+- Background: slate-50 (oklch(0.97 0.01 240))
+- Sidebar: slate-900 (dark theme)
+- Cards: white with border-border/50
+- Font: Rubik (CSS variable --font-rubik)
+- Radius: 0.625rem base
 
-## Key Libraries
-- `lucide-react` for icons
-- `next-client-cookies` for cookie access
-- `@tanstack/react-query` for data fetching
-- `react-hook-form` + `yup` for forms
+## Agents (OpenCode Kingdom v1.1.0)
+
+- **King Sisyphus** — always-running orchestrator
+- **Queen Metis** — wisdom, context, self-improvement
+- **Prince of Memory** — state, tasks, decisions
+- **Prince of Code** — building, quality enforcement
+- **Prince of Git** — commit discipline
+- **11 Knight Orders** — specialist executors
+- **Territory officials** — rxpro-manager, RxPro-context
+- **Kingdom path:** `C:\Users\neo\.config\opencode\kingdom`
+- **GitHub:** https://github.com/abdullahmiraz/opencode-kingdom
+
+## Current State (2026-06-25)
+
+- All pages built and connected to real API
+- CRUD operations work (create, read, update, delete with confirmation)
+- Patient search + autocomplete in prescription form
+- Doctor info auto-loads into prescription header
+- Template loading from favorite setups
+- Clone prescription from history
+- Appointment auto-completes when prescription saved
+- Proxy.ts replaces middleware.ts (Next.js 16 compat)
+- Dashboard shows real data with upcoming appointments
+- Favorite medicines integrated into drug autocomplete
+- Route types loaded from DB
+- Error/success toasts on all mutations
+- `npx tsc --noEmit`: 0 errors
+- `npm run build`: 0 errors
 
 ## Build Commands
-- `npm run dev` — dev server on :3000
-- `npm run build` — production build (must pass)
-- `tsc --noEmit` — type check (must pass)
 
-## Current Session State (2026-06-24)
-### Done
-- SQLite layer complete (database.ts, dal.ts, API route, api.ts, hooks)
-- Auth works (login → dashboard, middleware validates token)
-- Layout complete (sidebar, page header, loading/error/not-found boundaries)
-- Dashboard with stats + chart + activity table
-- All CRUD page shells exist
+```bash
+npm run dev          # Dev server at localhost:3000
+npm run build        # Production build (must pass: 0 errors)
+npx tsc --noEmit     # TypeScript check (must pass: 0 errors)
+```
 
-### Needs Work
-- prescription/components/ directory needs to be created with 4 files
-- All CRUD pages need to be connected to TanStack Query hooks
-- npm run build needs to be verified
+## Agent Memory System
 
-### How to Continue
-1. Read .opencode/memory/tasks.md for current task list
-2. Read .opencode/memory/state.md for project state
-3. Run `npx tsc --noEmit` before committing changes
-4. Run `npm run build` to verify production build
-
-### Running
-- `npm run dev` starts the dev server at localhost:3000
-- Login with admin / password
+- `.opencode/agents/rxpro-manager.md` — Project manager agent
+- `.opencode/agents/RxPro-context.md` — Full project context (this file)
+- `.opencode/memory/tasks.md` — Task tracker (completed + future)
+- `.opencode/memory/decisions.md` — Architecture Decision Records
+- `.opencode/memory/state.md` — Current project state snapshot

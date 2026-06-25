@@ -1,241 +1,256 @@
-# RxPro - User Journey & Flow Documentation
+# RxPro - Practical User Journeys
 
-## User Persona
-**Dr. Sarah Chen** - General Practitioner at a small private clinic
-- Sees 15-25 patients daily
-- Needs fast prescription generation between consultations
-- Manages appointments via printed schedule
-- Requires patient history for follow-up visits
-- Values quick setup and minimal typing
+**Persona:** Dr. Sarah Chen — GP at a small private clinic, 15-25 patients/day
+
+---
 
 ## System Overview
 
-RxPro is a single-doctor prescription management system with 9 core modules:
+| Module | Purpose | Operations |
+|--------|---------|------------|
+| Login | Cookie auth (`doctor_id` + `rx-token`) | Login / logout |
+| Dashboard | Stats, upcoming appointments, activity | Read-only (live data) |
+| Appointments | Schedule & manage visits | Full CRUD, links to prescription |
+| Patient Info | Patient registry with allergies | Full CRUD, expandable detail |
+| Doctor Info | Doctor profile, header/footer templates | Upsert |
+| Prescription | 12-section form, print, history | Create / View / Clone / Reprint |
+| Setup | Generic configs | Full CRUD |
+| Favorite Setup | Named templates for prescription | Full CRUD |
+| Favorite Medicine | Drug catalog | Full CRUD (integrated in Rx form) |
+| Instruction | Instructions + route types | Full CRUD |
 
-| Module | Purpose | CRUD | 
-|--------|---------|------|
-| Login | Cookie-based auth with `doctor_id` + `rx-token` | Login only |
-| Dashboard | Overview stats, weekly chart, recent activity | Read-only (demo data) |
-| Appointments | Schedule and manage patient visits | Full CRUD + navigate to prescription |
-| Patient Info | Patient registry with allergies and history | Full CRUD + expandable details |
-| Doctor Info | Doctor profile with prescription header/footer | Upsert |
-| Prescription | 12-section collapsible form, print, history | Create + View only (no edit) |
-| Setup | Generic configurations | Full CRUD |
-| Favorite Setup | Named templates loaded into prescription form | Full CRUD |
-| Favorite Medicine | Frequently prescribed drugs reference | Full CRUD (unused in form) |
-| Instruction | Standard instructions and route types | Full CRUD |
-
-**Auth:** `admin` / `password` (plain-text `security_word` check, base64 token)
-**Database:** SQLite via custom REST endpoint (`/api/data`)
-**Data pattern:** Client → `fetch()` POST → Next.js API Route → DAL → SQLite
+**Auth:** `admin` / `password` (base64 cookie token, proxy validation)  
+**DB:** SQLite via POST `/api/data` → DAL → better-sqlite3  
+**Data flow:** Client component → `api.ts` → API route → `dal.ts` → SQLite
 
 ---
 
 ## Flow 1: First-Time Setup
 
 ```
-/login → /doctor-info → /setup → /favorite-setup → /favorite-medicine → /patient-info
+/login → /dashboard (sees "Getting Started" banner)
+       → /doctor-info → fill profile
+       → /setup → add base configs
+       → /favorite-setup → create prescription templates
+       → /favorite-medicine → add commonly prescribed drugs
+       → /patient-info → add first patients
 ```
 
-**Steps:**
-1. Navigate to `/` → redirects to `/login`
-2. Enter doctor name `admin` and password `password` → POST `/api/data` action `fetchDoctorByCredentials`
-3. Cookie `doctor_id` + `rx-token` set → redirect to `/dashboard`
-4. Dashboard shows demo stats (128 patients, 24 appointments, 356 medicines, +12%)
-5. Click Sidebar → **Doctor Info** → fill in name, email, phone, qualifications, license, clinic, address, header/footer
-6. Click **Setup** → add setup configs (generic name/type/description entries)
-7. Click **Favorite Setup** → create saved prescription templates
-8. Click **Favorite Medicine** → add commonly prescribed drugs with dosage, route, instructions
-9. Click **Patient Info** → add first patients manually
+**Key behaviors:**
+- Dashboard shows "Getting Started" banner with quick links until doctor info is filled
+- Doctor info auto-populates prescription header once saved
+- Favorite medicines appear in prescription drug autocomplete
+- Favorite setups can be loaded into new prescriptions via template dropdown
 
-**Status:** ✅ Core flow works. Setup/Doctor Info/Favorite pages all connected to API.
-
-**Gaps:**
-- ❌ Doctor info doesn't auto-populate prescription form header
-- ❌ Favorite medicines not integrated into prescription form (form has hardcoded DRUG_OPTIONS list)
-- ❌ No guided first-time wizard/onboarding
+**Previously broken, now fixed:**
+- ✅ Doctor info auto-populates prescription header (seed data + cookie)
+- ✅ Favorite medicines integrated into prescription drug autocomplete
+- ✅ Route types loaded from DB (not hardcoded)
 
 ---
 
-## Flow 2: Daily Workflow - Appointment-Driven
+## Flow 2: Morning Rounds — Check Schedule
 
 ```
-/login → /dashboard → /appointments → /prescription?appointment_id=X&patient_id=Y → Fill form → Save → Print → Complete appointment
+/login → /dashboard
+       → view 4 stat cards (patients visited, future appts, prescriptions, total Rx)
+       → view "Upcoming Appointments" card (next scheduled with Create Rx links)
+       → view weekly chart + recent activity
+       → optionally → /appointments for full schedule
 ```
 
-**Steps:**
-1. Login → redirect to `/dashboard`
-2. Dashboard shows demo stats (not real counts)
-3. Click Sidebar → **Appointments** → views scheduled appointments in table
-4. Filter by date using date picker
-5. Click the prescription icon (FileText) on a **Scheduled** appointment row
-6. Navigates to `/prescription?appointment_id=<id>&patient_id=<id>`
-7. Fill in the 12-section collapsible prescription form (Complaints → Comorbidity → Examination → On Examination → Diagnosis → Medications → Investigation → On Investigation → Advice → Follow Up)
-8. Click **Save Prescription** → POST to API → toast "Prescription saved successfully" → form resets
-9. Click **Preview** → switches to PrintPrescription view
-10. Click **Print** → `window.print()`
-11. Switch to **History** tab → see the saved prescription
-12. Go back to Appointments → manually update status to "Completed" via edit dialog
+**What the doctor sees:**
+- **Patients Visited:** count of patients in DB
+- **Future Appointments:** count of scheduled appointments
+- **Medicines Prescribed:** count of prescriptions
+- **Total Prescriptions:** running total
+- **Upcoming Appointments:** up to 5 scheduled appts with patient name, time, reason, and a direct "Create Rx" link
+- **Recent Activity:** last 5 appointments (scheduled/completed/cancelled) from live data
+- **Weekly chart:** bar chart (currently demo data — static)
 
-**Status:** ✅ Path works for create + print. URL params passed from appointments.
-
-**Gaps:**
-- ❌ Prescription form doesn't read URL params (`appointment_id`, `patient_id` are passed but ignored)
-- ❌ Appointment status doesn't auto-update when prescription is created
-- ❌ Patient ID is a free-text field (should be a searchable patient selector)
-- ❌ Dashboard shows demo data, not real counts from DB
-- ❌ No 1-click "Complete Appointment" from prescription success callback
-- ❌ Doctor info doesn't auto-fill prescription header
+**Practical scenarios that work:**
+- Doctor can click "Create Rx" directly from dashboard → pre-selected patient + appointment
+- Doctor can click "View All" → navigate to full appointments page
+- Doctor sees real counts, not demo data
 
 ---
 
-## Flow 3: Daily Workflow - Patient-Driven
+## Flow 3: Patient Consultation — New Prescription
 
 ```
-/login → /patient-info → Search → View History → New Prescription → Print
+/login → /prescription → New Prescription tab
+       → Header Data auto-filled from doctor info
+       → Search patient by name → select from dropdown → patient ID auto-filled
+       → Expand sections as needed:
+         Complaints → enter symptoms + duration
+         Comorbidity → add existing conditions
+         Examination → record vitals
+         Diagnosis → enter findings
+         Medications → pick from favorite medicines autocomplete
+         Investigation → order tests
+         Advice → give instructions
+         Follow Up → schedule return
+       → Save Prescription → toast success → auto-resets form
+       → Preview → see formatted layout
+       → Print → window.print() (or save PDF)
 ```
 
-**Steps:**
-1. Login → `/dashboard`
-2. Click Sidebar → **Patient Info**
-3. Type patient name in search bar → `useMemo` filter narrows results
-4. Click expand chevron → view expandable row with contact details, allergies, medication history
-5. Click **Pencil** icon → edit patient details in dialog
-6. Navigate to **Prescription** via sidebar (no direct link from patient page)
-7. Type the Patient ID manually into the free-text field
-8. Fill prescription, save, print
+**Key behaviors:**
+- Patient search shows matching names as you type — click to select, shows ID/details
+- Header data pre-filled from doctor_profile (clinic name, address, license)
+- Favorite medicines appear in the drug dropdown
+- Template can be loaded first if a favorite setup matches the condition
+- All 12 sections are collapsible — only complaints is open by default
+- Saving auto-updates linked appointment status to "completed"
 
-**Status:** ✅ Patient CRUD works. Search, expand, edit all functional. FileText button creates prescription.
-
-**Gaps:**
-- ❌ Patient ID is typed manually - risk of error, no validation that patient exists
-- ❌ Patient allergies/medication history not displayed on prescription form
-- ❌ Medication history in patient info just shows list strings from DB - not structured
+**Error handling:**
+- Missing required fields → yup validation blocks submission
+- Save failure → toast error with message
+- Network issue → mutation hangs, form stays intact
 
 ---
 
-## Flow 4: Daily Workflow - Quick Prescription
+## Flow 4: Appointment-Driven Prescription
 
 ```
-/login → /prescription → Load Template → Select Patient → Fill Sections → Save → Print
+/login → /appointments
+       → see today's/week's schedule in table
+       → filter by date using date picker
+       → click "Create Rx" (FileText icon) on a Scheduled appointment
+       → redirected to /prescription?patient_id=X&appointment_id=Y
+       → patient auto-selected, appointment linked
+       → fill form → save → appointment auto-updates to "completed"
+       → go back to /appointments → status shows "completed"
 ```
 
-**Steps:**
-1. Click Sidebar → **Prescription**
-2. Default tab is "New Prescription"
-3. **Load Template** section at top - select a Favorite Setup from dropdown and click "Apply Template"
-4. Template populates Complaints, Examination, Investigation, Diagnosis, Advice, Medications with string arrays from JSON
-5. Type Patient ID
-6. Expand sections one by one - fill remaining details
-7. For medications: use `<datalist>` suggestions from hardcoded DRUG_OPTIONS
-8. Click **Save Prescription** → saved to DB, toast confirmation
-9. Click **Preview** → see formatted prescription, click Print
-
-**Status:** ✅ Template loading works. All 12 sections functional.
-
-**Gaps:**
-- ❌ Template only loads string data - dosage, duration, route, frequency must be re-entered
-- ❌ DRUG_OPTIONS is hardcoded (10 drugs) - not using favorite medicines from DB
-- ❌ No drug autocomplete from favorite medicines API
-- ❌ Patient must be selected by typing ID - no patient lookup/selector
-- ❌ No validation that patient_id exists in patients table
-- ❌ Favorite medicines route types hardcoded in form (ROUTE_OPTIONS) - not from route types API
+**What's automated:**
+- ✅ URL params `patient_id` and `appointment_id` are read and applied
+- ✅ Patient is auto-selected from the patient list
+- ✅ Saving prescription triggers `updateAppointment({ status: "completed" })`
+- ✅ No manual status change needed
 
 ---
 
-## Flow 5: Follow-Up Visit
+## Flow 5: Follow-Up Visit — Clone Previous Prescription
 
 ```
-Patient returns → /patient-info → Search → View History → /prescription → Reference Previous → Create New
+/login → /prescription → History tab
+       → search by patient name in search bar
+       → find previous prescription in paginated list
+       → click "Clone" (Copy icon)
+       → redirected to /prescription?clone_id=X
+       → all previous data loaded into form (header, complaints, meds, etc.)
+       → doctor modifies: updates complaints, changes dosage, adds new meds
+       → Save → new prescription created (original unchanged)
+       → Preview → Print → give to patient
 ```
 
-**Steps:**
-1. Patient returns for follow-up
-2. Search for patient in **Patient Info**
-3. Expand to view medication history (plain strings from DB)
-4. Navigate to **Prescription History** tab
-5. Search by patient name → find previous prescription
-6. Click **Eye icon** → Dialog shows: Patient, Patient ID, Date, Status, Complaints (string), Diagnosis (string), Medications (string)
-7. Close dialog → switch to **New Prescription** tab
-8. Re-type all data manually (no "Clone from Previous" feature)
-9. Save and print
+**Why this matters:** A returning patient doesn't need to retype everything. Clone the last visit, update what changed, save as new. The old prescription stays in history for reference.
 
-**Status:** ✅ View history works. Dialog shows basic info.
-
-**Gaps:**
-- ❌ Prescription detail dialog shows JSON strings for complaints/diagnosis/medications (not formatted)
-- ❌ No "Clone Previous Prescription" feature
-- ❌ No "Edit" button on prescription history records (view-only)
-- ❌ No reference to previous prescription data on new form
-- ❌ No ability to reprint a saved prescription directly from history
+**Behavior:**
+- Clone button on every history row
+- Full form populated from stored JSON data
+- Doctor can change anything before saving
+- Original prescription remains untouched in history
 
 ---
 
-## Flow 6: Managing Reference Data
+## Flow 6: Reprint a Lost Prescription
 
 ```
-Setup Management:
-→ /setup → Add/Edit/Delete configurations (name, type, description)
-
-Favorite Setups (Prescription Templates):
-→ /favorite-setup → Add/Edit/Delete templates (name, description, notes/JSON data)
-
-Favorite Medicines (Drug Catalog):
-→ /favorite-medicine → Add/Edit/Delete medicines (name, genericName, dosage, instructions, routeType)
-
-Instructions & Route Types:
-→ /instruction → Tabs: Instructions / Route Types → Add/Edit/Delete
+/login → /prescription → History tab
+       → search by patient name
+       → find the prescription
+       → click "View" (Eye icon) → dialog shows all details
+       → click "Print" inside dialog → window.print() with formatted layout
+      *(optional)* → clone → modify → re-save if changes needed
 ```
 
-**Status:** ✅ All four pages follow the same CRUD pattern with Table + Dialog form. All connected to API hooks. All have loading skeletons and empty states.
-
-**Gaps:**
-- ❌ No delete confirmation dialog on any reference data page
-- ❌ Favorite medicines not consumed by prescription form
-- ❌ Route types from DB not consumed by prescription form (hardcoded ROUTE_OPTIONS)
-- ❌ No error toasts on mutation failures (all `catch { // mutation error }`)
-- ❌ Notes field in favorite-setup is free text, not structured template JSON editor
+**Two paths to reprint:**
+1. **View → Print** — opens print dialog with the exact formatted prescription
+2. **Clone → modify → Save → Print** — if the patient needs a different dosage/medication
 
 ---
 
-## Flow 7: Review & Reprint
+## Flow 7: Update Patient Info → New Prescription
 
 ```
-/prescription → History tab → Search → View → (cannot reprint directly)
+/login → /patient-info
+       → search for returning patient
+       → click expand chevron → view current details, allergies, medication history
+       → click Edit (Pencil) → update phone, address, or allergies
+       → navigate to /prescription
+       → search and select patient → create prescription with current info
 ```
 
-**Steps:**
-1. Click **Prescription** → **History** tab
-2. Search by patient name
-3. Paginated list with Date, Patient Name, Patient ID, Status badge
-4. Click **Eye icon** → Dialog shows basic details
-5. No way to see full formatted prescription from history
-6. No way to reprint
-7. No way to edit
-
-**Status:** ❌ Basic view exists but no reprint or edit capability.
-
-**Gaps:**
-- ❌ No "Print" button on history view dialog
-- ❌ No "Edit" button on history records
-- ❌ No direct navigation from history record to prescription form with data pre-filled
+**Why this matters:** Patients change phone numbers, addresses, or develop new allergies between visits. Doctor updates before prescribing.
 
 ---
 
-## Flow 8: Error Recovery
+## Flow 8: Quick Template Prescription
 
-**What happens when something goes wrong:**
+```
+/login → /prescription → New Prescription tab
+       → in "Load Template" section, select a Favorite Setup from dropdown
+       → click "Apply Template"
+       → template data populates: complaints, examination, diagnosis, meds, advice
+       → doctor tweaks as needed (adds details, adjusts dosages)
+       → select patient → save
+```
 
-| Scenario | Current Behavior | Gap |
-|----------|-----------------|-----|
-| Invalid login | Error message in red banner above form | ✅ Works |
-| API fetch fails | Query retries (TanStack Query default) | ✅ Works |
-| Create/update fails | `catch { // mutation error }` - silent failure | ❌ No toast/feedback |
-| Delete fails | `mutation error` silently caught | ❌ No user feedback |
-| Network down during save | Mutation never completes, form stays | ❌ No timeout feedback |
-| Invalid patient ID | Form saves successfully (no validation) | ❌ No check patient exists |
-| Prescription history empty | Shows empty state with "Create first prescription" | ✅ Works |
-| Favorites empty | Shows "No templates available" | ✅ Works |
+**Use case:** Common conditions (hypertension, diabetes, UTI) have pre-made templates. Doctor loads, customizes, and saves in under a minute.
+
+---
+
+## Flow 9: Manage Reference Data
+
+```
+/setup           → add/edit/delete base configurations
+/favorite-setup  → create/edit/delete prescription templates (with JSON data)
+/favorite-medicine → add/edit/delete drug catalog entries
+/instruction     → manage instructions + route types via tabs
+```
+
+**CRUD behavior on all pages:**
+- Table view with all records
+- "Add" button opens dialog form
+- Edit (Pencil) opens pre-filled dialog
+- Delete shows confirmation dialog ("Delete X? This cannot be undone.")
+- Success toast on create/update/delete
+- Error toast on failure
+
+---
+
+## Flow 10: End of Day — Review & Wrap
+
+```
+/login → /dashboard
+       → check "Patients Visited" count for the day
+       → check "Future Appointments" for tomorrow
+       → review recent activity for any missed actions
+       → /appointments → verify all today's appts are "completed" or "cancelled"
+       → logout
+```
+
+---
+
+## Data Flow Architecture
+
+```
+┌──────────────┐    POST /api/data    ┌──────────────┐    DAL call    ┌───────────┐
+│  Client       │ ──────────────────→ │  API Route     │ ────────────→ │  DAL      │
+│  (React SPA)  │ ←────────────────── │  dispatcher    │ ←──────────── │  (44 fn)  │
+└──────────────┘    JSON response     └──────────────┘               └─────┬─────┘
+                                                                           │
+                                                                    ┌──────▼──────┐
+                                                                    │  SQLite DB  │
+                                                                    │  10 tables  │
+                                                                    └─────────────┘
+```
+
+**Client → API:** `api.ts` calls `POST /api/data` with `{ action, ...params }`  
+**API → DAL:** `route.ts` switches on action, calls DAL function  
+**DAL → SQLite:** Prepared statements on `better-sqlite3` instance
 
 ---
 
@@ -243,80 +258,50 @@ Instructions & Route Types:
 
 ```
 Doctor (rx_doctors)
-  ├── Appointments (appointments) ← doctor_id FK
-  ├── Patients (patients) ← no explicit FK (patient_id is free text)
-  ├── Prescriptions (prescriptions) ← doctor_id FK, patient_id free text
-  ├── Doctor Info (doctor_info) ← doctor_id FK (1:1)
-  ├── Setups (setups) ← doctor_id FK (doctor_id column assumed)
-  ├── Favorite Setups (favorite_setups) ← doctor_id FK
-  ├── Favorite Medicines (favorite_medicines) ← doctor_id FK
-  ├── Instructions (instructions) ← doctor_id FK
-  └── Route Types (route_types) ← doctor_id FK
+  ├── Doctor Info (rx_doctor_info) — 1:1
+  ├── Patients (rx_patients)
+  ├── Appointments (rx_appointments) — linked to patient via patient_id
+  ├── Prescriptions (rx_prescriptions) — linked to patient, doctor
+  ├── Setups (rx_setups)
+  ├── Favorite Setups (rx_favorite_setups)
+  ├── Favorite Medicines (rx_favorite_medicines)
+  ├── Instructions (rx_instructions)
+  └── Route Types (rx_route_types)
 ```
 
-**Key Observation:** `patient_id` is a **free-text string** in both appointments and prescriptions - there is no formal foreign key relationship between prescriptions and patients. This means:
-- Patient names can be inconsistent across prescriptions
-- No enforcement that a prescription references a valid patient
-- Patient info page and prescription form operate on independent IDs
-
 ---
 
-## Missing Features & Gaps Summary
+## Known Gaps (As of 2026-06-25)
 
-### Critical Gaps
-| # | Gap | Location | Impact |
-|---|-----|----------|--------|
-| 1 | Dashboard shows demo data | `Dashboard.tsx:24-41` | Useless for real clinic |
-| 2 | Prescription form ignores URL params | `PrescriptionForm.tsx:539-543` | Appointment → Prescription flow broken |
-| 3 | No edit prescription flow | `PrescriptionHistory.tsx:178-187` | Cannot correct mistakes |
-| 4 | No delete confirmation | All CRUD pages | Accidental data loss |
-| 5 | Patient ID is free text | `PrescriptionForm.tsx:789-803` | Errors, duplicates, no validation |
-| 6 | Silent mutation errors | All form submit handlers | User not notified of failures |
-| 7 | JSON strings in history dialog | `PrescriptionHistory.tsx:273-300` | Unreadable data |
-| 8 | Appointment status not auto-updated | `AppointmentsPage.tsx` | Manual step required |
+| # | Gap | Location | Priority |
+|---|-----|----------|----------|
+| 1 | Weekly chart uses demo data, not real stats | Dashboard.tsx | Low |
+| 2 | No guided first-time setup wizard | — | Low |
+| 3 | Structured JSON editor for favorite setup templates | FavoriteSetupPage | Low |
+| 4 | Drug interaction checking in prescription form | PrescriptionForm | Low |
+| 5 | Pharmacy/dispense module | — | Future |
+| 6 | Supabase migration | — | Future |
+| 7 | Doctor-specific data isolation | — | Future |
+| 8 | Appointment reminders | — | Future |
 
-### Moderate Gaps
-| # | Gap | Location | Impact |
-|---|-----|----------|--------|
-| 9 | Doctor info not auto-loaded in prescription | `PrescriptionForm.tsx` | Redundant typing every time |
-| 10 | Favorite medicines not used in form | `PrescriptionForm.tsx:63-74` | Duplicate reference data |
-| 11 | No patient selector component | `PrescriptionForm.tsx:789` | UX friction, errors |
-| 12 | No print from history | `PrescriptionHistory.tsx:224-305` | Cannot reprint |
-| 13 | No clone from previous prescription | Full stack | Cannot use past work |
-| 14 | Route types hardcoded, not from DB | `PrescriptionForm.tsx:76-84` | Maintenance burden |
-| 15 | Appointment table has no patient_id column | `AppointmentsPage.tsx:210-261` | Broken link to patient |
+### Resolved Gaps (from earlier audit)
 
-### Minor Gaps
-| # | Gap | Location | Impact |
-|---|-----|----------|--------|
- | 16 | ~~No "Create Prescription" button on patient row~~ | ✅ Fixed in prev session | FileText icon added |
-| 17 | No guided first-time setup | - | New users confused |
-| 18 | Template editor is free text, not structured | `FavoriteSetupPage.tsx` | Error-prone JSON entry |
-| 19 | No error toasts on CRUD failures | All pages | Unnoticed failures |
-| 20 | Favorite setups name mismatched with form sections | Schema vs UI | Confusing template mapping |
-
----
-
-## Action Items
-
-### Phase 1: Fix Broken Flows (High Priority)
-1. Read URL params (`appointment_id`, `patient_id`) in PrescriptionForm
-2. Replace hardcoded dashboard stats with real DB counts
-3. Add patient selector (search/autocomplete) to prescription form
-4. Add edit button to prescription history (with `updatePrescription` hook already exists)
-5. Add delete confirmation dialog to ALL CRUD pages
-6. Show error toasts on mutation failures
-
-### Phase 2: UX Improvements (Medium Priority)
-7. Auto-load doctor info into prescription header
-8. Auto-update appointment status to "Completed" on prescription save
-9. Integrate favorite medicines into prescription drug autocomplete
-10. Format JSON data in prescription history dialog
-11. Add "Print" button to prescription history dialog
-12. Add "Create Prescription" button to patient info rows
-
-### Phase 3: Polish (Low Priority)
-13. Load route types from DB instead of hardcoding
-14. Add clone/duplicate prescription feature
-15. Add guided first-time setup wizard
-16. Structured JSON editor for favorite setup templates
+| # | Gap | Fix |
+|---|-----|-----|
+| ✅ | Dashboard showed demo data | Replaced with real API counts + Upcoming Appointments card |
+| ✅ | Prescription form ignored URL params | Reads `patient_id`, `appointment_id`, `clone_id` from URL |
+| ✅ | Patient ID was free-text field | Replaced with searchable patient selector + autocomplete |
+| ✅ | No edit prescription flow | Clone feature allows modification → re-save |
+| ✅ | No delete confirmation | Confirmation dialog on all CRUD pages |
+| ✅ | Silent mutation errors | Toast on success + error for all mutations |
+| ✅ | JSON strings in history dialog | Dialog shows formatted data |
+| ✅ | Appointment status not auto-updated | Auto-sets to "completed" on prescription save |
+| ✅ | Doctor info not auto-loaded in prescription | Header auto-populated from DB |
+| ✅ | Favorite medicines not in form | Drug autocomplete uses favorite medicines |
+| ✅ | Route types hardcoded | Loaded from route_types table via API |
+| ✅ | No print from history | Print button in view dialog |
+| ✅ | No clone from previous | Clone button navigates to form with pre-filled data |
+| ✅ | No Create Rx button on patient row | FileText icon added |
+| ✅ | No error toasts on CRUD failures | All pages have success/error toasts |
+| ✅ | middleware.ts deprecated | Migrated to proxy.ts |
+| ✅ | Missing key prop in PatientInfo TableBody | Fixed with `<Fragment key={p.id}>` |

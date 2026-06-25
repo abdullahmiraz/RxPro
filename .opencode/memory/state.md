@@ -1,5 +1,5 @@
 # RxPro - Project State Snapshot
-**Last Updated:** 2026-06-25 (session 3: bugfixes + proxy migration + Dashboard upgrade + Playwright verification)
+**Last Updated:** 2026-06-25 (session 4: user-journey rewrite + agent updates + practical flow testing)
 
 ## 👑 Kingdom Status
 - **Linked to:** OpenCode Kingdom v1.1.0 (Palace & Territories)
@@ -61,6 +61,7 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 - **2026-06-25 (session 2):** `src/middleware.ts` renamed to `proxy.ts` — Next.js 16 deprecated `middleware` in favor of `proxy`.
 - **2026-06-25 (session 2):** Patient Info page missing `key` prop on `<></>` fragment in `TableBody` — fixed by using `<Fragment key={p.id}>`.
 - **2026-06-25 (session 3):** Dashboard: Replaced hardcoded `recentActivity` with real data from appointments API; added "Upcoming Appointments" card with 5 scheduled appointments + "Create Rx" links. Stat card "Last 7 Days" → "Total Prescriptions".
+- **2026-06-25 (session 4):** Rewrote `docs/user-journey.md` with 10 practical daily flows (not theoretical scenarios). Updated `RxPro-context.md` and `rxpro-manager.md` agents. Verified all flows with Playwright: dashboard live data, patient search+select, history empty state. Zero console errors.
 
 ## Future Enhancements (Low Priority)
 1. Guided first-time setup wizard
