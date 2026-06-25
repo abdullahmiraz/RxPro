@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo, useEffect } from "react"
-import { Eye, FileText, Loader2, Search, Printer, Pencil, Copy } from "lucide-react"
+import { Eye, FileText, Loader2, Search, Printer, FileDown, Pencil, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCookies } from "next-client-cookies"
 
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   Table,
@@ -353,16 +354,24 @@ export default function PrescriptionHistory() {
               )}
             </div>
           )}
-          <div className="flex justify-end border-t pt-4 print-hide">
+          <DialogFooter className="print-hide">
+            <Button
+              variant="outline"
+              onClick={() => window.open(`/prescription/${selected?.id}/print`, "_blank")}
+              aria-label="Download prescription as PDF"
+            >
+              <FileDown className="size-4" />
+              Download PDF
+            </Button>
             <Button
               variant="outline"
               onClick={() => window.print()}
               aria-label="Print prescription"
             >
-              <Printer className="size-4 mr-2" />
+              <Printer className="size-4" />
               Print
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
