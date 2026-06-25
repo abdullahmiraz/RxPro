@@ -39,7 +39,7 @@ To swap to Supabase: rewrite `src/lib/dal.ts` to use supabase client + update `s
 ## Auth
 - Login: admin / password (rx_doctors table, security_word field)
 - Cookies: doctor_id + rx-token (base64 encoded JSON)
-- Middleware: validates token decodes to matching doctor_id
+- Proxy: validates token decodes to matching doctor_id
 - Doctor ID in SQLite seed: `d1`
 
 ## Data Layer Files

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, Fragment } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -271,9 +271,8 @@ export default function PatientInfoPage() {
                 {paginatedPatients.map((patient) => {
                   const p = getPatientWithExtras(patient)
                   return (
-                    <>
+                    <Fragment key={p.id}>
                       <TableRow
-                        key={p.id}
                         className="cursor-pointer"
                         onClick={() => toggleExpand(p.id)}
                       >
@@ -419,7 +418,7 @@ export default function PatientInfoPage() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   )
                 })}
               </TableBody>

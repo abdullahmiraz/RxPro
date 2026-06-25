@@ -3,6 +3,10 @@
 
 ## Completed
 - [x] **Bug fix 2026-06-25:** Patient Info expand crash — `fetchPatients()` missing `parseJson()` for allergies field
+- [x] **2026-06-25 (session 2):** Added seed data for `rx_doctor_info` — fixes TanStack Query `undefined` warning
+- [x] **2026-06-25 (session 2):** Fixed hardcoded `"d1"` in PrescriptionForm — now reads from `doctor_id` cookie
+- [x] **2026-06-25 (session 2):** Migrated `middleware.ts` → `proxy.ts` (Next.js 16 deprecation)
+- [x] **2026-06-25 (session 2):** Fixed missing `key` prop on fragment in PatientInfo page TableBody
 - [x] Project scaffold with Next.js 16 + shadcn/ui 4.11 + Tailwind v4
 - [x] 21 shadcn/ui components installed (base-nova style, @base-ui/react)
 - [x] Core dependencies installed (tanstack-query, react-hook-form, yup, react-table, lucide-react, better-sqlite3)

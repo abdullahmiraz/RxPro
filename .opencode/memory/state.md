@@ -1,12 +1,13 @@
 # RxPro - Project State Snapshot
-**Last Updated:** 2026-06-25 (kingdom migration)
+**Last Updated:** 2026-06-25 (session 3: bugfixes + proxy migration + Dashboard upgrade + Playwright verification)
 
 ## 👑 Kingdom Status
-- **Linked to:** OpenCode Kingdom v1.0.0
+- **Linked to:** OpenCode Kingdom v1.1.0 (Palace & Territories)
+- **Kingdom repo:** https://github.com/abdullahmiraz/opencode-kingdom
 - **Kingdom path:** `C:\Users\neo\.config\opencode\kingdom`
-- **Agents source:** Royal agents (king/) + knights (knights/) from kingdom. Project-specific: `rxpro-manager`, `rxpro-builder`, `RxPro-context`.
+- **Agents source:** Palace (king/ + knights/) — territory agents operate from project dirs
+- **King:** watches via `AGENTS.md` — Palace issues edicts, territories execute
 - **CLI:** `./kingdom init/link/sync/promote/backup/restore/status`
-- **Regeneration:** `./kingdom restore` from `backup/` mirror — instant
 
 ## Build Status
 - tsc --noEmit: ✅ PASSES (0 errors)
@@ -34,7 +35,7 @@
 - **Engine:** better-sqlite3 (local SQLite)
 - **DB Path:** data/rxpro.db
 - **Tables:** 10 tables (rx_doctors, rx_patients, rx_appointments, rx_prescriptions, rx_setups, rx_favorite_setups, rx_favorite_medicines, rx_instructions, rx_route_types, rx_doctor_info)
-- **Seed data:** 1 doctor (admin), 5 patients, 5 appointments, 3 setups, 2 favorite setups, 5 favorite medicines, 4 instructions, 5 route types
+- **Seed data:** 1 doctor (admin) + doctor_info, 5 patients, 5 appointments, 3 setups, 2 favorite setups, 5 favorite medicines, 4 instructions, 5 route types
 
 ## API Architecture
 Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src/lib/dal.ts → src/lib/database.ts (better-sqlite3)
@@ -45,7 +46,7 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 - [x] Client API + TanStack Query hooks
 - [x] Auth (login page + cookie middleware)
 - [x] Layout (sidebar + page header + loading/error/not-found)
-- [x] Dashboard (real API stats, real chart, real activity)
+- [x] Dashboard (real API stats, real chart, real activity from API, Upcoming Appointments section with direct Create Rx links)
 - [x] All CRUD pages connected to real API (Setup, FavoriteSetup, FavoriteMedicine, Instruction)
 - [x] Doctor Info page (API-connected, auto-loads into prescription header)
 - [x] Patient Info page (API-connected, search, expandable details, allergies, Create Rx button)
@@ -55,6 +56,11 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 
 ## Bug Fixes
 - **2026-06-25:** Patient Info page expand chevron → blank page. `fetchPatients()` returned `allergies` as raw JSON string; expandable detail row called `.map()` on it. Added `parseJson()` in `fetchPatients()` (was already in `fetchPatient()`). Root cause: DAL inconsistency between list and single-get.
+- **2026-06-25 (session 2):** Console error `Query data cannot be undefined` for `["doctorInfo","d1"]` — missing seed data in `rx_doctor_info` table. Added seed data for doctor `d1` with clinic name, address, templates.
+- **2026-06-25 (session 2):** PrescriptionForm hardcoded `"d1"` — changed to read `doctor_id` from cookies (with `"d1"` fallback) so multi-doctor auth works.
+- **2026-06-25 (session 2):** `src/middleware.ts` renamed to `proxy.ts` — Next.js 16 deprecated `middleware` in favor of `proxy`.
+- **2026-06-25 (session 2):** Patient Info page missing `key` prop on `<></>` fragment in `TableBody` — fixed by using `<Fragment key={p.id}>`.
+- **2026-06-25 (session 3):** Dashboard: Replaced hardcoded `recentActivity` with real data from appointments API; added "Upcoming Appointments" card with 5 scheduled appointments + "Create Rx" links. Stat card "Last 7 Days" → "Total Prescriptions".
 
 ## Future Enhancements (Low Priority)
 1. Guided first-time setup wizard

@@ -550,7 +550,8 @@ export default function PrescriptionForm({
   const urlAppointmentId = searchParams.get("appointment_id")
 
   const { data: patients } = usePatients()
-  const { data: doctorInfo } = useDoctorInfo("d1")
+  const doctorId = cookies.get("doctor_id") ?? "d1"
+  const { data: doctorInfo } = useDoctorInfo(doctorId)
 
   const updateAppointment = useUpdateAppointment()
   const { data: favoriteMedicines } = useFavoriteMedicines()

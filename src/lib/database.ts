@@ -158,6 +158,15 @@ function seedData(db: Database.Database) {
   `)
   insert.run(doctorId, 'admin', 'doctor@rxpro.com', '+1-555-0100', '123 Medical Center Dr', 'MD', 'LIC-001', 'password')
 
+  const insertDocInfo = db.prepare(`
+    INSERT INTO rx_doctor_info (id, doctor_id, clinic_name, address, phone, email, license_number, qualifications, header_template, footer_template)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `)
+  insertDocInfo.run('di1', doctorId, 'RxPro Medical Clinic', '123 Medical Center Dr, Suite 100', '+1-555-0100', 'doctor@rxpro.com', 'LIC-001', 'MD - Internal Medicine',
+    '[Clinic Name] | [Address] | Phone: [Phone] | License: [License #]',
+    'Dr. [Doctor Name] - [Qualifications]\nThank you for your visit.'
+  )
+
   const patientIds = ['p1', 'p2', 'p3', 'p4', 'p5']
   const insertPatient = db.prepare(`
     INSERT INTO rx_patients (id, name, age, gender, phone, email, address, blood_group, date_of_birth, allergies)
