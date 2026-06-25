@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -15,6 +15,7 @@ import {
   useUpdateAppointment,
   useDeleteAppointment,
 } from "@/hooks/useAppointments"
+import { usePatients } from "@/hooks/usePatients"
 import PageHeader from "@/components/shared/page-header/PageHeader"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -55,7 +56,6 @@ import {
 } from "@/components/ui/pagination"
 
 const appointmentSchema = yup.object({
-  patientName: yup.string().required("Patient name is required"),
   date: yup.string().required("Date is required"),
   time: yup.string().required("Time is required"),
   reason: yup.string().required("Reason is required"),
@@ -68,12 +68,18 @@ const appointmentSchema = yup.object({
 
 type AppointmentFormData = yup.InferType<typeof appointmentSchema>
 
-interface Appointment extends AppointmentFormData {
+interface Appointment {
   id: string
+  patient_name?: string
+  patient_id?: string
+  appointment_date?: string
+  appointment_time?: string
+  status: string
+  reason: string
+  notes?: string
 }
 
 const defaultForm: AppointmentFormData = {
-  patientName: "",
   date: "",
   time: "",
   reason: "",
@@ -92,6 +98,7 @@ export default function AppointmentsPage() {
   const cookies = useCookies()
   const doctorId = cookies.get("doctor_id")
   const { data: appointments, isLoading } = useAppointments(doctorId ?? undefined)
+  const { data: patients } = usePatients()
   const createMutation = useCreateAppointment()
   const updateMutation = useUpdateAppointment()
   const deleteMutation = useDeleteAppointment()
@@ -99,6 +106,8 @@ export default function AppointmentsPage() {
   const [dateFilter, setDateFilter] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAppt, setEditingAppt] = useState<Appointment | null>(null)
+  const [selectedPatient, setSelectedPatient] = useState<Record<string, unknown> | null>(null)
+  const [patientSearch, setPatientSearch] = useState("")
 
   const {
     register,
@@ -116,7 +125,7 @@ export default function AppointmentsPage() {
   const filtered = useMemo(
     () =>
       dateFilter
-        ? appointmentList.filter((a) => a.date === dateFilter)
+        ? appointmentList.filter((a) => a.appointment_date === dateFilter)
         : appointmentList,
     [appointmentList, dateFilter]
   )
@@ -128,34 +137,59 @@ export default function AppointmentsPage() {
 
   useEffect(() => setPage(1), [dateFilter])
 
+  const filteredPatients = useMemo(() => {
+    if (!patientSearch.trim() || !patients) return []
+    return (patients as Record<string, unknown>[]).filter((p) =>
+      String(p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase())
+    )
+  }, [patientSearch, patients])
+
   function openAdd() {
     setEditingAppt(null)
+    setSelectedPatient(null)
+    setPatientSearch("")
     reset(defaultForm)
     setDialogOpen(true)
   }
 
   function openEdit(appt: Appointment) {
     setEditingAppt(appt)
+    setSelectedPatient(appt.patient_id ? ({ id: appt.patient_id, name: appt.patient_name } as Record<string, unknown>) : null)
+    setPatientSearch(appt.patient_name ?? "")
     reset({
-      patientName: appt.patientName,
-      date: appt.date,
-      time: appt.time,
-      reason: appt.reason,
-      notes: appt.notes,
-      status: appt.status,
+      date: appt.appointment_date ?? "",
+      time: appt.appointment_time ?? "",
+      reason: appt.reason ?? "",
+      notes: appt.notes ?? "",
+      status: (appt.status ?? "Scheduled") as "Scheduled" | "Completed" | "Cancelled",
     })
     setDialogOpen(true)
   }
 
   async function onSave(data: AppointmentFormData) {
     try {
+      const patientId = editingAppt?.patient_id ?? (selectedPatient?.id as string | undefined)
+      if (!patientId) {
+        toast.error("Please select a patient")
+        return
+      }
+      const payload = {
+        patient_id: patientId,
+        appointment_date: data.date,
+        appointment_time: data.time,
+        reason: data.reason,
+        notes: data.notes || "",
+        status: data.status.toLowerCase(),
+      }
       if (editingAppt) {
-        await updateMutation.mutateAsync({ id: editingAppt.id, data: data as any })
+        await updateMutation.mutateAsync({ id: editingAppt.id, data: payload as any })
       } else {
-        await createMutation.mutateAsync(data as any)
+        await createMutation.mutateAsync(payload as any)
       }
       setDialogOpen(false)
       setEditingAppt(null)
+      setSelectedPatient(null)
+      setPatientSearch("")
     } catch {
       toast.error("Failed to save appointment")
     }
@@ -227,11 +261,11 @@ export default function AppointmentsPage() {
               <TableBody>
                 {paginatedAppointments.map((appt) => (
                   <TableRow key={appt.id}>
-                    <TableCell className="font-medium">{appt.patientName}</TableCell>
-                    <TableCell>{appt.date}</TableCell>
-                    <TableCell>{appt.time}</TableCell>
+                    <TableCell className="font-medium">{appt.patient_name ?? "-"}</TableCell>
+                    <TableCell>{appt.appointment_date ?? "-"}</TableCell>
+                    <TableCell>{appt.appointment_time ?? "-"}</TableCell>
                     <TableCell>
-                      <Badge variant={statusColors[appt.status]}>
+                      <Badge variant={statusColors[appt.status] ?? "secondary"}>
                         {appt.status}
                       </Badge>
                     </TableCell>
@@ -250,15 +284,15 @@ export default function AppointmentsPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Create prescription for ${appt.patientName}`}
-                          onClick={() => router.push(`/prescription?appointment_id=${appt.id}&patient_id=${(appt as any).patient_id ?? ""}`)}
+                          aria-label={`Create prescription for ${appt.patient_name ?? "patient"}`}
+                          onClick={() => router.push(`/prescription?appointment_id=${appt.id}&patient_id=${appt.patient_id ?? ""}`)}
                         >
                           <FileText className="size-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          onClick={() => deleteAppointment(appt.id, appt.patientName)}
+                          onClick={() => deleteAppointment(appt.id, appt.patient_name ?? "unknown")}
                         >
                           <Trash2 className="size-4 text-destructive" />
                         </Button>
@@ -311,10 +345,45 @@ export default function AppointmentsPage() {
           <form onSubmit={handleSubmit(onSave)}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="patientName">Patient Name *</Label>
-                <Input id="patientName" {...register("patientName")} />
-                {errors.patientName && (
-                  <p className="text-xs text-destructive">{errors.patientName.message}</p>
+                <Label htmlFor="patientSearch">Patient *</Label>
+                <Input
+                  id="patientSearch"
+                  value={patientSearch}
+                  onChange={(e) => {
+                    setPatientSearch(e.target.value)
+                    if (!e.target.value) {
+                      setSelectedPatient(null)
+                    }
+                  }}
+                  placeholder="Type patient name..."
+                  aria-label="Search patient by name"
+                />
+                {filteredPatients.length > 0 && (
+                  <div className="max-h-48 overflow-auto rounded-md border">
+                    {filteredPatients.map((p) => (
+                      <button
+                        key={p.id as string}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatient(p)
+                          setPatientSearch(p.name as string)
+                        }}
+                        className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-muted"
+                        aria-label={`Select patient ${p.name as string}`}
+                      >
+                        <span className="font-medium">{p.name as string}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {p.phone as string}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedPatient && !filteredPatients.length && (
+                  <p className="text-xs text-muted-foreground">Selected: {selectedPatient.name as string}</p>
+                )}
+                {!selectedPatient && !filteredPatients.length && patientSearch && (
+                  <p className="text-xs text-destructive">No matching patients found</p>
                 )}
               </div>
 

@@ -1,4 +1,4 @@
-# RxPro - Orchestrator Rules
+# {{project_name}} - Orchestrator Rules
 **These rules apply to EVERY agent session. Read before any work.**
 
 ## 1. Memory First
@@ -8,7 +8,7 @@ Before ANY code changes, read these files in order:
 3. `.opencode/memory/decisions.md` — architecture decisions that constrain changes
 
 ## 2. Manager Agent Invocation
-At session start, invoke `@rxpro-manager` to get full context:
+At session start, invoke `@{{project_name}}-manager` to get full context:
 - Ask "What is the current project state and what should I work on next?"
 - The manager reads all memory files and returns a brief
 
@@ -20,15 +20,15 @@ At session start, invoke `@rxpro-manager` to get full context:
 
 ## 4. Quality Gates
 Before committing ANY change:
-- Run `npx tsc --noEmit` — must pass with ZERO errors
-- Run `npm run build` — must pass with ZERO errors
+- Run `{{typecheck_command}}` — must pass with ZERO errors
+- Run `{{build_command}}` — must pass with ZERO errors
 - If either fails, FIX before committing
 
 ## 5. Commit Discipline
 Every commit must:
 - Have a meaningful message describing WHAT changed and WHY
 - Group related changes together
-- NOT include `.env*`, `data/`, `node_modules/`, `.next/`
+- NOT include `.env*`, `data/`, `node_modules/`, `.next/`, `target/`, `__pycache__/`
 
 ## 6. No Task Left Behind
 The full task backlog is in `.opencode/memory/tasks.md`. Future enhancements are listed under "Future Enhancements". Each session should:
@@ -37,12 +37,12 @@ The full task backlog is in `.opencode/memory/tasks.md`. Future enhancements are
 3. Never lose the list — it's the source of truth
 
 ## 7. Architecture Constraints
-- SQLite (better-sqlite3) for storage — pages use API routes, never direct DB access
-- All client data fetching goes through `src/hooks/` TanStack Query hooks
-- No `any` types anywhere
-- Imports use `@/` alias never relative paths
-- Forms use react-hook-form + yup (yupResolver)
-- Components use shadcn/ui v4 from `@/components/ui/`
+(Edit this section for your project architecture)
+- Follow project-specific patterns from `AGENTS.md` and `{{project_name}}-context.md`
+- Use project's chosen libraries and frameworks consistently
+- No `any` types (in TypeScript projects)
+- Follow project's import conventions
+- Use project's form/validation libraries
 
 ## 8. Meta-Cognition (Thinking Protocol)
 Apply this PLAN → DECOMPOSE → EXECUTE → VERIFY cycle for ALL complex tasks:
@@ -50,7 +50,7 @@ Apply this PLAN → DECOMPOSE → EXECUTE → VERIFY cycle for ALL complex tasks
 **PLAN**: Before any code change, state the goal, list sub-tasks, identify dependencies
 **DECOMPOSE**: Split into parallel vs sequential work. Read first, edit second.
 **EXECUTE**: One change at a time. Check tool output between steps. Update todos as you go.
-**VERIFY**: Run tsc + build. Check UX (loading/empty/error states). Update memory files.
+**VERIFY**: Run typecheck + build. Check UX (loading/empty/error states). Update memory files.
 
 When stuck: Stop, re-read the relevant files, reassess approach. If still stuck after 3 attempts, escalate.
 
@@ -58,10 +58,10 @@ When stuck: Stop, re-read the relevant files, reassess approach. If still stuck 
 I am the master orchestrator. I NEVER stop. I follow this strict session flow:
 
 ### Session Flow (MANDATORY)
-1. **Context Load**: Invoke `@rxpro-manager` for full context
+1. **Context Load**: Invoke `@{{project_name}}-manager` for full context
 2. **Decompose**: Break goal into sub-tasks, decide delegate vs self
 3. **Execute**: Delegate via sub-agents (builder, git, checker)
-4. **Verify**: `@quality-gate` (tsc+build) + `@context-checker` (flow validation)
+4. **Verify**: `@quality-gate` (typecheck+build) + `@context-checker` (flow validation)
 5. **Commit**: `@git-manager` chain (inspect → quality → commit)
 6. **Update**: `@state-writer` + `@task-tracker` update memory files
 
@@ -69,8 +69,8 @@ I am the master orchestrator. I NEVER stop. I follow this strict session flow:
 - Data layer → `@data-layer-builder`
 - Components → `@component-builder`
 - Pages → `@page-assembler`
-- Multi-file features → `@rxpro-builder`
-- Code changes → `@rxpro-builder` agents
+- Multi-file features → `@{{project_name}}-builder`
+- Code changes → `@{{project_name}}-builder` agents
 - Git → `@git-manager` agents
 - Quality → `@quality-gate` or `@context-checker`
 
@@ -86,11 +86,3 @@ Every session:
 2. If a pattern caused errors, encode a rule to prevent it next time
 3. If a plugin/agent would help, install it
 4. Update skills based on new knowledge gained
-
-## 11. Reusable Template
-This project was bootstrapped from the opencode template at `.opencode/template/`.
-To create a new project from this template:
-1. Copy `.opencode/template/` to a fresh project
-2. Run `pwsh .opencode/template/init.ps1 -ProjectName "myapp" -ProjectDescription "..." -BuildCommand "npm run build" -TypecheckCommand "npx tsc --noEmit"`
-3. Edit the generated files to customize for your tech stack
-See `.opencode/template/init.ps1` for full usage.

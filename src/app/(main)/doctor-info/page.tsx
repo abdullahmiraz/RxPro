@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { useCookies } from "next-client-cookies"
 import { Save, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { useDoctorInfo, useUpsertDoctorInfo } from "@/hooks/useDoctorInfo"
 import PageHeader from "@/components/shared/page-header/PageHeader"
@@ -74,11 +75,11 @@ export default function DoctorInfoPage() {
         email: (doctorInfo.email as string) ?? "",
         phone: (doctorInfo.phone as string) ?? "",
         qualifications: (doctorInfo.qualifications as string) ?? "",
-        licenseNumber: (doctorInfo.licenseNumber as string) ?? "",
-        clinicName: (doctorInfo.clinicName as string) ?? "",
+        licenseNumber: (doctorInfo.license_number as string) ?? (doctorInfo.licenseNumber as string) ?? "",
+        clinicName: (doctorInfo.clinic_name as string) ?? (doctorInfo.clinicName as string) ?? "",
         address: (doctorInfo.address as string) ?? "",
-        prescriptionHeader: (doctorInfo.prescriptionHeader as string) ?? "",
-        prescriptionFooter: (doctorInfo.prescriptionFooter as string) ?? "",
+        prescriptionHeader: (doctorInfo.header_template as string) ?? (doctorInfo.prescriptionHeader as string) ?? "",
+        prescriptionFooter: (doctorInfo.footer_template as string) ?? (doctorInfo.prescriptionFooter as string) ?? "",
       })
     }
   }, [doctorInfo, reset])
@@ -86,12 +87,27 @@ export default function DoctorInfoPage() {
   const onSubmit = useCallback(
     async (data: DoctorFormData) => {
       try {
-        await upsertMutation.mutateAsync(data as any)
+        const payload: Record<string, unknown> = {
+          doctor_id: doctorId,
+          clinic_name: data.clinicName,
+          address: data.address,
+          phone: data.phone,
+          email: data.email,
+          license_number: data.licenseNumber,
+          qualifications: data.qualifications,
+          header_template: data.prescriptionHeader ?? null,
+          footer_template: data.prescriptionFooter ?? null,
+        }
+        if (doctorInfo?.id) {
+          payload.id = doctorInfo.id as string
+        }
+        await upsertMutation.mutateAsync(payload as any)
+        toast.success("Doctor info saved")
       } catch {
-        // mutation error
+        toast.error("Failed to save doctor info")
       }
     },
-    [upsertMutation]
+    [upsertMutation, doctorId, doctorInfo]
   )
 
   if (isLoading) {

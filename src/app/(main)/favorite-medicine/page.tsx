@@ -46,9 +46,11 @@ interface FavoriteMedicine {
   id: string
   name: string
   genericName: string
+  generic_name?: string
   dosage: string
   instructions: string
   routeType: string
+  route_type?: string
 }
 
 const routeTypes = ['Oral', 'Topical', 'Intravenous', 'Intramuscular', 'Subcutaneous', 'Inhalation', 'Ophthalmic', 'Otic']
@@ -104,10 +106,10 @@ export default function FavoriteMedicinePage() {
     setEditingMedicine(medicine)
     reset({
       name: medicine.name,
-      genericName: medicine.genericName,
+      genericName: medicine.generic_name ?? medicine.genericName,
       dosage: medicine.dosage,
       instructions: medicine.instructions,
-      routeType: medicine.routeType,
+      routeType: medicine.route_type ?? medicine.routeType,
     })
     setDialogOpen(true)
   }, [reset])
@@ -125,10 +127,17 @@ export default function FavoriteMedicinePage() {
   const onSubmit = useCallback(
     async (data: FormData) => {
       try {
+        const payload = {
+          name: data.name,
+          generic_name: data.genericName,
+          dosage: data.dosage,
+          instructions: data.instructions,
+          route_type: data.routeType,
+        }
         if (editingMedicine) {
-          await updateMutation.mutateAsync({ id: editingMedicine.id, data: data as any })
+          await updateMutation.mutateAsync({ id: editingMedicine.id, data: payload as any })
         } else {
-          await createMutation.mutateAsync(data as any)
+          await createMutation.mutateAsync(payload as any)
         }
         setDialogOpen(false)
         setEditingMedicine(null)
@@ -214,10 +223,10 @@ export default function FavoriteMedicinePage() {
               {medicineList.map((medicine) => (
                 <TableRow key={medicine.id}>
                   <TableCell className="font-medium">{medicine.name}</TableCell>
-                  <TableCell>{medicine.genericName}</TableCell>
+                  <TableCell>{medicine.generic_name ?? medicine.genericName}</TableCell>
                   <TableCell>{medicine.dosage}</TableCell>
                   <TableCell className="max-w-xs truncate">{medicine.instructions}</TableCell>
-                  <TableCell>{medicine.routeType}</TableCell>
+                  <TableCell>{medicine.route_type ?? medicine.routeType}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Button

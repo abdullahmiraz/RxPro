@@ -50,3 +50,7 @@ next-env.d.ts
 # Dev server logs
 dev-server.log
 dev-server2.log
+
+# Agent directories
+.omo/
+.playwright-mcp/

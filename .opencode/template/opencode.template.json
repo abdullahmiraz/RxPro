@@ -7,32 +7,31 @@
     "@capybearista/opencode-agent-prompt-inheritance@latest"
   ],
   "instructions": [".opencode/RULES.md"],
-  "_comment_template": "To reuse this project structure, see .opencode/template/ for a generic version with {{placeholders}} that can be copied to any project.",
   "agent": {
     "master-orchestrator": {
       "description": "ROOT: Always-running master agent that manages all sub-agents and delegates work",
       "mode": "primary",
       "prompt": "Read .opencode/RULES.md and .opencode/agents/master-orchestrator.md. Always invoke sub-agents for specialized tasks - never work alone."
     },
-    "rxpro-manager": {
+    "{{project_name}}-manager": {
       "description": "Project manager under master-orchestrator - tracks tasks, decisions, and state",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/rxpro-manager.md and .opencode/memory/ for full context. Report status to master-orchestrator."
+      "prompt": "Read .opencode/agents/{{project_name}}-manager.md and .opencode/memory/ for full context. Report status to master-orchestrator."
     },
     "task-tracker": {
-      "description": "Manages project todo list under rxpro-manager",
+      "description": "Manages project todo list under {{project_name}}-manager",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/task-tracker.md for task management workflow. Report to rxpro-manager."
+      "prompt": "Read .opencode/agents/task-tracker.md for task management workflow. Report to {{project_name}}-manager."
     },
     "state-writer": {
-      "description": "Maintains state.md and decisions.md under rxpro-manager",
+      "description": "Maintains state.md and decisions.md under {{project_name}}-manager",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/state-writer.md for state update workflow. Report to rxpro-manager."
+      "prompt": "Read .opencode/agents/state-writer.md for state update workflow. Report to {{project_name}}-manager."
     },
     "context-loader": {
-      "description": "Provides full project context from memory files under rxpro-manager",
+      "description": "Provides full project context from memory files under {{project_name}}-manager",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/context-loader.md for context gathering workflow. Report to rxpro-manager."
+      "prompt": "Read .opencode/agents/context-loader.md for context gathering workflow. Report to {{project_name}}-manager."
     },
     "git-manager": {
       "description": "Git commit/push manager under master-orchestrator - monitors changes, decides atomic commits",
@@ -45,7 +44,7 @@
       "prompt": "Read .opencode/agents/change-inspector.md for change analysis workflow. Report to git-manager."
     },
     "quality-gate": {
-      "description": "Runs tsc + build checks before commits under git-manager",
+      "description": "Runs {{typecheck_command}} + {{build_command}} checks before commits under git-manager",
       "mode": "subagent",
       "prompt": "Read .opencode/agents/quality-gate.md for quality check workflow. Report to git-manager."
     },
@@ -54,30 +53,30 @@
       "mode": "subagent",
       "prompt": "Read .opencode/agents/commit-executor.md for commit execution workflow. Report to git-manager."
     },
-    "rxpro-builder": {
-      "description": "Primary builder under master-orchestrator - builds RxPro prescription management system",
+    "{{project_name}}-builder": {
+      "description": "Primary builder under master-orchestrator - builds {{project_description}}",
       "mode": "primary",
-      "prompt": "Read .opencode/RULES.md then .opencode/agents/RxPro-context.md before making changes. Report status to master-orchestrator."
+      "prompt": "Read .opencode/RULES.md then .opencode/agents/{{project_name}}-context.md before making changes. Report status to master-orchestrator."
     },
     "component-builder": {
-      "description": "Builds UI components using shadcn/ui v4 under rxpro-builder",
+      "description": "Builds UI components using project's UI framework under {{project_name}}-builder",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/component-builder.md for component patterns. Report to rxpro-builder."
+      "prompt": "Read .opencode/agents/component-builder.md for component patterns. Report to {{project_name}}-builder."
     },
     "data-layer-builder": {
-      "description": "Builds API layer, DAL, hooks, database queries under rxpro-builder",
+      "description": "Builds API layer, DAL, hooks, database queries under {{project_name}}-builder",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/data-layer-builder.md for data layer patterns. Report to rxpro-builder."
+      "prompt": "Read .opencode/agents/data-layer-builder.md for data layer patterns. Report to {{project_name}}-builder."
     },
     "page-assembler": {
-      "description": "Assembles full pages from components + data + forms under rxpro-builder",
+      "description": "Assembles full pages from components + data + forms under {{project_name}}-builder",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/page-assembler.md for page patterns. Report to rxpro-builder."
+      "prompt": "Read .opencode/agents/page-assembler.md for page patterns. Report to {{project_name}}-builder."
     },
     "context-checker": {
       "description": "Validates user journeys against implementation under master-orchestrator",
       "mode": "subagent",
-      "prompt": "Read .opencode/agents/context-checker.md then docs/user-journey.md for flows to validate. Report findings to master-orchestrator."
+      "prompt": "Read .opencode/agents/context-checker.md then project documentation for flows to validate. Report findings to master-orchestrator."
     }
   }
 }
