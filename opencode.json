@@ -4,9 +4,15 @@
     "oh-my-opencode",
     "@capybearista/opencode-adversarial-review@latest",
     "@capybearista/opencode-agents-loader@latest",
-    "@capybearista/opencode-agent-prompt-inheritance@latest"
+    "@capybearista/opencode-agent-prompt-inheritance@latest",
+    "opencode-skillful",
+    "opencode-goal-plugin"
   ],
   "rules": ".opencode/RULES.md",
+  "skill": [
+    "meta-cognition",
+    "self-review"
+  ],
   "agents": {
     "rxpro-manager": {
       "description": "Project manager - tracks tasks, decisions, and state across sessions",
@@ -78,6 +84,12 @@
       "description": "Assembles full pages from components + data + forms under rxpro-builder",
       "mode": "subagent",
       "instructions": "Read .opencode/agents/page-assembler.md for page patterns",
+      "hide": false
+    },
+    "context-checker": {
+      "description": "Validates user journeys against implementation, ensures no flow step is forgotten",
+      "mode": "subagent",
+      "instructions": "Read .opencode/agents/context-checker.md then docs/user-journey.md for flows to validate",
       "hide": false
     }
   }

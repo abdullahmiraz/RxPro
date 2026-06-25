@@ -39,6 +39,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 
 interface FavoriteMedicine {
@@ -133,15 +134,21 @@ export default function FavoriteMedicinePage() {
         setEditingMedicine(null)
         reset(defaultValues)
       } catch {
-        // mutation error — dialog stays open
+        toast.error('Failed to save medicine')
       }
     },
     [editingMedicine, updateMutation, createMutation, reset]
   )
 
   const handleDelete = useCallback(
-    (id: string) => {
-      deleteMutation.mutate(id)
+    async (id: string, name: string) => {
+      if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+      try {
+        await deleteMutation.mutateAsync(id)
+        toast.success('Medicine deleted')
+      } catch {
+        toast.error('Failed to delete medicine')
+      }
     },
     [deleteMutation]
   )
@@ -225,7 +232,7 @@ export default function FavoriteMedicinePage() {
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Delete ${medicine.name}`}
-                        onClick={() => handleDelete(medicine.id)}
+                        onClick={() => handleDelete(medicine.id, medicine.name)}
                       >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>

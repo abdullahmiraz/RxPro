@@ -27,6 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 
 interface Setup {
@@ -110,15 +111,21 @@ export default function SetupPage() {
         setEditingSetup(null)
         reset(defaultValues)
       } catch {
-        // mutation error — dialog stays open
+        toast.error('Failed to save setup')
       }
     },
     [editingSetup, updateMutation, createMutation, reset]
   )
 
   const handleDelete = useCallback(
-    (id: string) => {
-      deleteMutation.mutate(id)
+    async (id: string, name: string) => {
+      if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+      try {
+        await deleteMutation.mutateAsync(id)
+        toast.success('Setup deleted')
+      } catch {
+        toast.error('Failed to delete setup')
+      }
     },
     [deleteMutation]
   )
@@ -200,7 +207,7 @@ export default function SetupPage() {
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Delete ${setup.name}`}
-                        onClick={() => handleDelete(setup.id)}
+                        onClick={() => handleDelete(setup.id, setup.name)}
                       >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import PageHeader from "@/components/shared/page-header/PageHeader"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -13,23 +12,12 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { Users, Calendar, Pill, TrendingUp } from "lucide-react"
-
-interface StatCard {
-  title: string
-  value: string
-  icon: typeof Users
-  bg: string
-}
-
-const statCards: StatCard[] = [
-  { title: "Patients Visited", value: "128", icon: Users, bg: "bg-blue-50" },
-  { title: "Future Appointments", value: "24", icon: Calendar, bg: "bg-emerald-50" },
-  { title: "Medicines Prescribed", value: "356", icon: Pill, bg: "bg-amber-50" },
-  { title: "Last 7 Days", value: "+12%", icon: TrendingUp, bg: "bg-purple-50" },
-]
+import { useCookies } from "next-client-cookies"
+import { usePatients } from "@/hooks/usePatients"
+import { useAppointments } from "@/hooks/useAppointments"
+import { usePrescriptions } from "@/hooks/usePrescriptions"
 
 const weeklyData = [8, 12, 6, 15, 10, 18, 9]
-
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 const recentActivity = [
@@ -43,16 +31,30 @@ const recentActivity = [
 const maxValue = Math.max(...weeklyData)
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true)
+  const cookies = useCookies()
+  const doctorId = cookies.get("doctor_id") ?? ""
+  const doctorName = doctorId ? "Dr. [Name]" : "Doctor"
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
+  const { data: patients, isLoading: patientsLoading } = usePatients()
+  const { data: appointments, isLoading: appointmentsLoading } = useAppointments(doctorId || undefined)
+  const { data: prescriptions, isLoading: prescriptionsLoading } = usePrescriptions(doctorId || undefined)
+
+  const loading = patientsLoading || appointmentsLoading || prescriptionsLoading
+
+  const patientsCount = (patients as Record<string, unknown>[])?.length ?? 0
+  const futureAppointments = (appointments as Record<string, unknown>[])?.filter(a => (a as { status?: string }).status === "scheduled").length ?? 0
+  const medicinesCount = (prescriptions as Record<string, unknown>[])?.length ?? 0
+
+  const statCards = [
+    { title: "Patients Visited", value: String(patientsCount), icon: Users, bg: "bg-blue-50" },
+    { title: "Future Appointments", value: String(futureAppointments), icon: Calendar, bg: "bg-emerald-50" },
+    { title: "Medicines Prescribed", value: String(medicinesCount), icon: Pill, bg: "bg-amber-50" },
+    { title: "Last 7 Days", value: "+12%", icon: TrendingUp, bg: "bg-purple-50" },
+  ]
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Welcome back, Doctor." />
+      <PageHeader title="Dashboard" description={`Welcome back, ${doctorName}.`} />
 
       <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => {
@@ -129,10 +131,6 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
-            ) : recentActivity.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                No recent activity
-              </p>
             ) : (
               <Table>
                 <TableHeader>
@@ -142,12 +140,20 @@ export default function Dashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentActivity.map((row, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="text-muted-foreground">{row.date}</TableCell>
-                      <TableCell>{row.activity}</TableCell>
+                  {recentActivity.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="py-8 text-center text-sm text-muted-foreground">
+                        No recent activity
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    recentActivity.map((row, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-muted-foreground">{row.date}</TableCell>
+                        <TableCell>{row.activity}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             )}

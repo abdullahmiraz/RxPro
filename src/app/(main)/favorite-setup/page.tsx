@@ -32,6 +32,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 
 interface FavoriteSetup {
@@ -113,15 +114,21 @@ export default function FavoriteSetupPage() {
         setEditingFavorite(null)
         reset(defaultValues)
       } catch {
-        // mutation error — dialog stays open
+        toast.error('Failed to save favorite setup')
       }
     },
     [editingFavorite, updateMutation, createMutation, reset]
   )
 
   const handleDelete = useCallback(
-    (id: string) => {
-      deleteMutation.mutate(id)
+    async (id: string, name: string) => {
+      if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+      try {
+        await deleteMutation.mutateAsync(id)
+        toast.success('Favorite setup deleted')
+      } catch {
+        toast.error('Failed to delete favorite setup')
+      }
     },
     [deleteMutation]
   )
@@ -200,7 +207,7 @@ export default function FavoriteSetupPage() {
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Delete ${favorite.name}`}
-                        onClick={() => handleDelete(favorite.id)}
+                        onClick={() => handleDelete(favorite.id, favorite.name)}
                       >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>

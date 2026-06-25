@@ -15,6 +15,7 @@ import {
   Loader2,
   Users,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from "@/hooks/usePatients"
 import PageHeader from "@/components/shared/page-header/PageHeader"
@@ -183,13 +184,19 @@ export default function PatientInfoPage() {
       setDialogOpen(false)
       setEditingPatient(null)
     } catch {
-      // mutation error
+      toast.error("Failed to save patient")
     }
   }
 
-  function deletePatient(id: string) {
-    deleteMutation.mutate(id)
-    if (expandedId === id) setExpandedId(null)
+  async function deletePatient(id: string, name: string) {
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+    try {
+      await deleteMutation.mutateAsync(id)
+      toast.success("Patient deleted")
+      if (expandedId === id) setExpandedId(null)
+    } catch {
+      toast.error("Failed to delete patient")
+    }
   }
 
   function toggleExpand(id: string) {
@@ -311,7 +318,7 @@ export default function PatientInfoPage() {
                               size="icon-xs"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                deletePatient(p.id)
+                                deletePatient(p.id, p.name)
                               }}
                             >
                               <Trash2 className="size-4 text-destructive" />

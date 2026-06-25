@@ -11,7 +11,7 @@ import { Stethoscope, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { supabase } from "@/lib/supabase"
+import * as api from "@/api/api"
 
 const schema = yup.object({
   name: yup.string().required("Doctor name is required"),
@@ -51,18 +51,13 @@ export default function Login() {
       setError(null)
 
       try {
-        const { data: doctorResult, error: authError } = await supabase
-          .from("rx_doctors")
-          .select("id, name, security_word")
-          .eq("name", data.name)
-          .eq("security_word", data.securityWord)
-          .single()
+        const doctorResult = await api.fetchDoctorByCredentials(data.name, data.securityWord)
 
-        if (authError || !doctorResult) {
+        if (!doctorResult) {
           throw new Error("Invalid credentials")
         }
 
-        const doctor = doctorResult as { id: string; name: string }
+        const doctor = doctorResult as { id: string; name: string; security_word: string }
 
         const token = btoa(
           JSON.stringify({ doctor_id: doctor.id, name: doctor.name })

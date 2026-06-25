@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { useCookies } from "next-client-cookies"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Plus, Pencil, Trash2, Loader2, Calendar, FileText } from "lucide-react"
 
 import {
@@ -156,12 +157,18 @@ export default function AppointmentsPage() {
       setDialogOpen(false)
       setEditingAppt(null)
     } catch {
-      // mutation error
+      toast.error("Failed to save appointment")
     }
   }
 
-  function deleteAppointment(id: string) {
-    deleteMutation.mutate(id)
+  async function deleteAppointment(id: string, name: string) {
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+    try {
+      await deleteMutation.mutateAsync(id)
+      toast.success("Appointment deleted")
+    } catch {
+      toast.error("Failed to delete appointment")
+    }
   }
 
   if (isLoading) {
@@ -251,7 +258,7 @@ export default function AppointmentsPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          onClick={() => deleteAppointment(appt.id)}
+                          onClick={() => deleteAppointment(appt.id, appt.patientName)}
                         >
                           <Trash2 className="size-4 text-destructive" />
                         </Button>

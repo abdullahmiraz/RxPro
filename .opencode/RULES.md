@@ -43,3 +43,20 @@ The full task backlog is in `.opencode/memory/tasks.md`. Future enhancements are
 - Imports use `@/` alias never relative paths
 - Forms use react-hook-form + yup (yupResolver)
 - Components use shadcn/ui v4 from `@/components/ui/`
+
+## 8. Meta-Cognition (Thinking Protocol)
+Apply this PLAN → DECOMPOSE → EXECUTE → VERIFY cycle for ALL complex tasks:
+
+**PLAN**: Before any code change, state the goal, list sub-tasks, identify dependencies
+**DECOMPOSE**: Split into parallel vs sequential work. Read first, edit second.
+**EXECUTE**: One change at a time. Check tool output between steps. Update todos as you go.
+**VERIFY**: Run tsc + build. Check UX (loading/empty/error states). Update memory files.
+
+When stuck: Stop, re-read the relevant files, reassess approach. If still stuck after 3 attempts, escalate.
+
+## 9. Self-Training Loop
+Every session:
+1. Note what worked well and what didn't
+2. If a pattern caused errors, encode a rule to prevent it next time
+3. If a plugin/agent would help, install it
+4. Update skills based on new knowledge gained

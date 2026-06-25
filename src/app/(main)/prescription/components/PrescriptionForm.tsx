@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useId } from "react"
+import { useState, useCallback, useId, useEffect } from "react"
 import {
   useForm,
   useFieldArray,
@@ -32,6 +32,9 @@ import {
 import { cn } from "@/lib/utils"
 import { useCreatePrescription } from "@/hooks/usePrescriptions"
 import { useFavoriteSetups } from "@/hooks/useSetup"
+import { usePatients } from "@/hooks/usePatients"
+import { useDoctorInfo } from "@/hooks/useDoctorInfo"
+import { useSearchParams } from "next/navigation"
 import type { PrescriptionFormData } from "../types"
 
 interface SectionState {
@@ -560,6 +563,15 @@ export default function PrescriptionForm({
 
   const cookies = useCookies()
   const createPrescription = useCreatePrescription()
+  const searchParams = useSearchParams()
+  const urlPatientId = searchParams.get("patient_id")
+  const urlAppointmentId = searchParams.get("appointment_id")
+
+  const { data: patients } = usePatients()
+  const { data: doctorInfo } = useDoctorInfo("d1")
+
+  const [patientSearch, setPatientSearch] = useState("")
+  const [selectedPatient, setSelectedPatient] = useState<Record<string, unknown> | null>(null)
 
   const {
     register,
@@ -574,6 +586,13 @@ export default function PrescriptionForm({
     defaultValues,
     mode: "onChange",
   })
+
+  const filteredPatients =
+    patientSearch.trim() && patients
+      ? (patients as Record<string, unknown>[]).filter((p) =>
+          String(p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase())
+        )
+      : []
 
   const toggleSection = useCallback((section: keyof SectionState) => {
     setSections((prev) => ({
@@ -665,6 +684,25 @@ export default function PrescriptionForm({
 
     toast.success("Template loaded")
   }, [selectedTemplateId, favoriteSetups, setValue])
+
+  useEffect(() => {
+    if (doctorInfo) {
+      setValue("headerData.doctorName", (doctorInfo.doctor_name as string) || "")
+      setValue("headerData.clinicName", (doctorInfo.clinic_name as string) || "")
+      setValue("headerData.address", (doctorInfo.address as string) || "")
+      setValue("headerData.licenseNumber", (doctorInfo.license_number as string) || "")
+    }
+  }, [doctorInfo, setValue])
+
+  useEffect(() => {
+    if (urlPatientId && patients) {
+      setValue("patientId", urlPatientId)
+      const found = (patients as Record<string, unknown>[]).find((p) => p.id === urlPatientId)
+      if (found) {
+        setSelectedPatient(found)
+      }
+    }
+  }, [urlPatientId, patients, setValue])
 
   const handleFormSubmit = useCallback(
     (data: PrescriptionFormData) => {
@@ -780,20 +818,68 @@ export default function PrescriptionForm({
         </CardContent>
       </Card>
 
-      {/* Patient ID Section */}
+      {/* Patient Section */}
       <Card>
         <CardHeader className="border-b">
           <span className="text-sm font-medium">Patient</span>
         </CardHeader>
         <CardContent>
-          <div>
-            <Label htmlFor="patientId">Patient ID</Label>
-            <Input
-              id="patientId"
-              {...register("patientId")}
-              placeholder="e.g. PAT-001"
-              aria-label="Patient ID"
-            />
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="patientSearch">Search Patient</Label>
+              <Input
+                id="patientSearch"
+                value={patientSearch}
+                onChange={(e) => {
+                  setPatientSearch(e.target.value)
+                  if (!e.target.value) {
+                    setSelectedPatient(null)
+                    setValue("patientId", "")
+                  }
+                }}
+                placeholder="Type patient name..."
+                aria-label="Search patient by name"
+              />
+            </div>
+            {filteredPatients.length > 0 && (
+              <div className="max-h-48 overflow-auto rounded-md border">
+                {filteredPatients.map((p) => (
+                  <button
+                    key={p.id as string}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPatient(p)
+                      setValue("patientId", p.id as string)
+                      setPatientSearch("")
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-muted aria-selected:bg-muted"
+                    aria-label={`Select patient ${p.name as string}`}
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium">{p.name as string}</span>
+                      <span className="ml-2 text-muted-foreground">
+                        {p.phone as string}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                      {p.age != null && <span>{(p.age as number)} yrs</span>}
+                      {p.gender != null && <span>{p.gender as string}</span>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedPatient && (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <div className="mb-1 font-medium">{selectedPatient.name as string}</div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+                  <span>ID: {selectedPatient.id as string}</span>
+                  {selectedPatient.phone != null && <span>Phone: {selectedPatient.phone as string}</span>}
+                  {selectedPatient.age != null && <span>Age: {selectedPatient.age as number}</span>}
+                  {selectedPatient.gender != null && <span>Gender: {selectedPatient.gender as string}</span>}
+                </div>
+              </div>
+            )}
             {errors.patientId && (
               <p className="mt-1 text-xs text-destructive">
                 {errors.patientId.message}

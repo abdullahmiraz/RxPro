@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useCallback, useMemo, useEffect } from "react"
-import { Eye, FileText, Loader2, Search } from "lucide-react"
+import { Eye, FileText, Loader2, Search, Printer, Pencil } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useCookies } from "next-client-cookies"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -46,8 +47,38 @@ interface PrescriptionRecord {
   medications?: string
 }
 
+function renderJsonList(jsonStr: string): React.ReactNode {
+  try {
+    const parsed = JSON.parse(jsonStr)
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return <p className="text-muted-foreground text-sm">None</p>
+    }
+    return (
+      <ul className="list-disc pl-4 space-y-1">
+        {parsed.map((item: unknown, i: number) => {
+          if (typeof item === "string") {
+            return <li key={i} className="text-sm">{item}</li>
+          }
+          const obj = item as Record<string, string>
+          const name = obj.drugName || obj.name || ""
+          const dosage = obj.dosage || ""
+          const instructions = obj.instructions || ""
+          return (
+            <li key={i} className="text-sm">
+              {name}{dosage ? ` - ${dosage}` : ""}{instructions ? ` (${instructions})` : ""}
+            </li>
+          )
+        })}
+      </ul>
+    )
+  } catch {
+    return <p className="text-sm">{jsonStr}</p>
+  }
+}
+
 export default function PrescriptionHistory() {
   const cookies = useCookies()
+  const router = useRouter()
   const doctorId = cookies.get("doctor_id")
   const { data, isLoading, error } = usePrescriptions(doctorId)
   const [selected, setSelected] = useState<PrescriptionRecord | null>(null)
@@ -176,14 +207,24 @@ export default function PrescriptionHistory() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => handleView(record)}
-                    aria-label={`View prescription for ${record.patient_name ?? "unknown patient"}`}
-                  >
-                    <Eye className="size-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => handleView(record)}
+                      aria-label={`View prescription for ${record.patient_name ?? "unknown patient"}`}
+                    >
+                      <Eye className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label="Edit prescription"
+                      onClick={() => router.push(`/prescription?edit_id=${record.id}`)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -275,9 +316,9 @@ export default function PrescriptionHistory() {
                   <span className="text-muted-foreground">
                     Complaints:
                   </span>
-                  <p className="mt-0.5 font-medium">
-                    {selected.complaints}
-                  </p>
+                  <div className="mt-0.5">
+                    {renderJsonList(selected.complaints)}
+                  </div>
                 </div>
               )}
               {selected.diagnosis && (
@@ -285,9 +326,9 @@ export default function PrescriptionHistory() {
                   <span className="text-muted-foreground">
                     Diagnosis:
                   </span>
-                  <p className="mt-0.5 font-medium">
-                    {selected.diagnosis}
-                  </p>
+                  <div className="mt-0.5">
+                    {renderJsonList(selected.diagnosis)}
+                  </div>
                 </div>
               )}
               {selected.medications && (
@@ -295,13 +336,23 @@ export default function PrescriptionHistory() {
                   <span className="text-muted-foreground">
                     Medications:
                   </span>
-                  <p className="mt-0.5 font-medium">
-                    {selected.medications}
-                  </p>
+                  <div className="mt-0.5">
+                    {renderJsonList(selected.medications)}
+                  </div>
                 </div>
               )}
             </div>
           )}
+          <div className="flex justify-end border-t pt-4 print-hide">
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              aria-label="Print prescription"
+            >
+              <Printer className="size-4 mr-2" />
+              Print
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

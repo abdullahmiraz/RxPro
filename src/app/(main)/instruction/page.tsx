@@ -42,6 +42,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2, FileText, Route } from 'lucide-react'
 
 interface Instruction {
@@ -161,7 +162,7 @@ export default function InstructionPage() {
         setEditingInstruction(null)
         instructionForm.reset(defaultInstructionValues)
       } catch {
-        // mutation error
+        toast.error('Failed to save instruction')
       }
     },
     [editingInstruction, updateInstructionMut, createInstructionMut, instructionForm]
@@ -179,22 +180,34 @@ export default function InstructionPage() {
         setEditingRouteType(null)
         routeTypeForm.reset(defaultRouteTypeValues)
       } catch {
-        // mutation error
+        toast.error('Failed to save route type')
       }
     },
     [editingRouteType, updateRouteTypeMut, createRouteTypeMut, routeTypeForm]
   )
 
   const handleDeleteInstruction = useCallback(
-    (id: string) => {
-      deleteInstructionMut.mutate(id)
+    async (id: string, name: string) => {
+      if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+      try {
+        await deleteInstructionMut.mutateAsync(id)
+        toast.success('Instruction deleted')
+      } catch {
+        toast.error('Failed to delete instruction')
+      }
     },
     [deleteInstructionMut]
   )
 
   const handleDeleteRouteType = useCallback(
-    (id: string) => {
-      deleteRouteTypeMut.mutate(id)
+    async (id: string, name: string) => {
+      if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+      try {
+        await deleteRouteTypeMut.mutateAsync(id)
+        toast.success('Route type deleted')
+      } catch {
+        toast.error('Failed to delete route type')
+      }
     },
     [deleteRouteTypeMut]
   )
@@ -365,7 +378,7 @@ export default function InstructionPage() {
                             variant="ghost"
                             size="icon-sm"
                             aria-label={`Delete instruction ${instruction.name}`}
-                            onClick={() => handleDeleteInstruction(instruction.id)}
+                            onClick={() => handleDeleteInstruction(instruction.id, instruction.name)}
                           >
                             <Trash2 className="size-4 text-destructive" />
                           </Button>
@@ -427,7 +440,7 @@ export default function InstructionPage() {
                             variant="ghost"
                             size="icon-sm"
                             aria-label={`Delete route type ${routeType.name}`}
-                            onClick={() => handleDeleteRouteType(routeType.id)}
+                            onClick={() => handleDeleteRouteType(routeType.id, routeType.name)}
                           >
                             <Trash2 className="size-4 text-destructive" />
                           </Button>
