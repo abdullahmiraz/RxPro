@@ -39,3 +39,5 @@ Open http://localhost:3000. The root path redirects to `/login` if unauthenticat
 ## Architecture
 
 The data flow is `Client Component` to `src/api/api.ts` (POST `/api/data`), dispatched by `src/app/api/data/route.ts` to `src/lib/dal.ts` (server-side CRUD), backed by `src/lib/database.ts` (better-sqlite3 with auto-init and seed data). Swapping the SQLite backend for Supabase is a change to `dal.ts` and `api.ts` only; pages and hooks stay identical.
+
+--- great
