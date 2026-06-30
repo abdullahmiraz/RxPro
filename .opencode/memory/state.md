@@ -1,5 +1,5 @@
 # RxPro - Project State Snapshot
-**Last Updated:** 2026-06-25 (session 6: PDF export + model config + DialogFooter fix)
+**Last Updated:** 2026-06-30 (session 9: routine sync)
 
 ## 👑 Kingdom Status
 - **Linked to:** OpenCode Kingdom v1.1.0 (Palace & Territories)
@@ -11,7 +11,8 @@
 
 ## Build Status
 - tsc --noEmit: ✅ PASSES (0 errors)
-- npm run build: ✅ PASSES (0 errors, 17 routes, Proxy registered)
+- npm run build: ✅ PASSES (0 errors, 16 routes, Proxy registered)
+- E2E Playwright: ✅ All 9 routes navigated, 0 console errors, all API calls 200 OK
 
 ## Model Config (updated session 6)
 - **All agents use `deepseek-v4-flash-free`** (no provider prefix — `opencode-go/` was broken)
@@ -88,8 +89,15 @@ Client → src/api/api.ts (POST /api/data) → src/app/api/data/route.ts → src
 - **2026-06-25 (session 3):** Dashboard: Replaced hardcoded `recentActivity` with real data from appointments API; added "Upcoming Appointments" card with 5 scheduled appointments + "Create Rx" links. Stat card "Last 7 Days" → "Total Prescriptions".
 - **2026-06-25 (session 4):** Rewrote `docs/user-journey.md` with 10 practical daily flows (not theoretical scenarios). Updated `RxPro-context.md` and `rxpro-manager.md` agents. Verified all flows with Playwright: dashboard live data, patient search+select, history empty state. Zero console errors.
 - **2026-06-25 (session 5):** C6+H2+H4 security hardening. Route.ts now injects authenticated doctorId into all DAL calls (C6). Added doctor_id ownership checks to appointments & prescriptions DAL ops (H2). Added Origin/Referer CSRF protection (H4). Secured `/api/backup` with HMAC auth + origin check (Metis finding). All verified with 2 deep agents + Queen Metis supervision. 34/44 audit findings resolved.
+- **2026-06-25 (session 7):** Old seed data stored plain-text `password` instead of bcrypt hash. Added inline migration in `seedData()` that detects non-bcrypt passwords (not starting with `$2`) and upgrades them on startup. New DB deletes get properly hashed seed via `hashPassword()`.
+- **2026-06-25 (session 7):** Dead migration v1 (`ALTER TABLE rx_patients ADD COLUMN doctor_id`) removed from `database.ts` — column already created by `createTables()`. Old try/catch wrapper was flawed (silently swallowed real SQL errors). Oracle-reviewed, removed entirely.
+- **2026-06-25 (session 8):** Route restructure undone — prescription moved back from `(rx)` to `(app)` group. Sidebar restored to /prescription page. `(rx)` group deleted. Print CSS retained: sidebar hidden during print via `print-hide` class in `(app)/layout.tsx` + `@media print` rule in `globals.css`. CSP `'unsafe-inline'` in `style-src` is ignored by browser when nonce is present (Next.js DevTools inline style CSP errors are dev-only, non-blocking).
+- **2026-06-25 (session 8):** Project closed per user request. All 5 pending todos completed.
 
-## Future Enhancements (Post-Phase 1)
+## Project Status: CLOSED
+The RxPro project has been closed by the user. All planned features, security hardening, bug fixes, and print improvements are complete.
+
+## Future Enhancements (Post-Phase 1) — Archived
 1. Guided first-time setup wizard
 2. Drug interaction checking
 3. Pharmacy/dispense module
