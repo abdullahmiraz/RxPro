@@ -1,5 +1,5 @@
 # RxPro - Task Tracker
-**Last Updated:** 2026-06-25 (session 6: PDF export + model config + DialogFooter fix)
+**Last Updated:** 2026-06-30 (session 9: routine sync)
 
 ## Completed
 - [x] **2026-06-25 (session 6):** PDF export — created `/prescription/[id]/print` route with auto-print trigger, 0 npm deps
@@ -65,11 +65,19 @@
 - [x] **Production audit**: All 44 findings (C1-C6, H1-H13, M1-M16, L1-L12) resolved
 - [x] **PDF export**: Print route + download button (Phase 1 feature)
 - [x] **Model config**: Unified to deepseek-v4-flash-free (was mixture of minimax-m3, deepseek-v4-flash, mimo-v2.5 with wrong prefix)
+- [x] **2026-06-25 (session 8):** Undone route restructure — moved prescription back from `(rx)` to `(app)` group
+- [x] **2026-06-25 (session 8):** Fixed import path in `prescription-transform.ts` — `(rx)` → `(app)`
+- [x] **2026-06-25 (session 8):** Deleted `(rx)` route group
+- [x] **2026-06-25 (session 8):** Verified `tsc --noEmit` + `npm run build` pass (0 errors)
+- [x] **2026-06-25 (session 8):** Playwright-verified sidebar visible on /prescription
+- [x] **2026-06-25 (session 8):** Updated memory files — project closed
 
-## In Progress
-(none)
+## Project: CLOSED
 
-## Future Enhancements
+## Archived Tasks
+- [ ] Fix `normalizeArray` in prescription-transform.ts — silently drops non-array data when `parseJson` returns string (deferred — project closed)
+
+## Future Enhancements — Archived
 - [ ] Guided first-time setup wizard
 - [ ] Drug interaction checking in prescription form
 - [ ] Pharmacy/dispense module
